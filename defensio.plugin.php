@@ -36,6 +36,7 @@ class Defensio extends Plugin
 	public function action_plugin_activation( $file )
 	{
 		if ( $file == $this->get_file() ) {
+			Session::notice( _t('Please set your Defensio API Key in the configuration.') );
 			foreach ( self::default_options() as $name => $value ) {
 				Options::set( 'defensio:' . $name, $value );
 			}
@@ -151,10 +152,10 @@ STATS;
 			$result= $this->defensio->audit_comment( $params );
 			if ( $result->spam == true ) {
 				$comment->status= 'spam';
+				$comment->info->spamcheck= array_unique(array_merge((array) $comment->info->spamcheck, array('Flagged as Spam by Defensio')));
 			}
 			$comment->info->defensio_signature= $result->signature;
 			$comment->info->defensio_spaminess= $result->spaminess;
-			$comment->info->spamcheck= array_unique(array_merge((array) $comment->info->spamcheck, array('Flagged as Spam by Defensio')));
 		}
 		catch ( Exception $e ) {
 			EventLog::log( $e->getMessage(), 'notice', 'comment', 'Defensio' );
