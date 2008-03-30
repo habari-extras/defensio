@@ -14,6 +14,8 @@
 			<tr><td><?php _e('Total Unapproved Comments'); ?></td><td><?php echo Comments::count_total( Comment::STATUS_UNAPPROVED ); ?></td></tr>
 			<tr><td><?php _e('Total Spam Comments'); ?></td><td><?php echo Comments::count_total( Comment::STATUS_SPAM ); ?></td></tr>
 			</table>
+			<h3><?php _e('Defensio Statistics'); ?></h3>
+			<?php $theme->defensio_stats(); ?>
 		</div>
 
 		<div class="column span-17 last push-1">

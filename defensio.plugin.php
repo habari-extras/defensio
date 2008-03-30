@@ -87,7 +87,12 @@ class Defensio extends Plugin
 	
 	public function action_init()
 	{
-		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
+		if ( Options::get( 'defensio:api_key' ) == '' ) {
+			EventLog::log( 'You must enter a valid API key for Defensio to work', 'notice', 'default', 'Defensio' );
+		}
+		else {
+			$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
+		}
 	}
 	
 	public function filter_include_template_file( $file, $name )
@@ -115,11 +120,11 @@ class Defensio extends Plugin
 		}
 		// this should be a template.
 		return <<<STATS
-			<ul>
-				<li>Accuracy: {$stats->accuracy}</li>
-				<li>Total Spam: {$stats->spam}</li>
-				<li>Total Ham: {$stats->ham}</li>
-			</ul>
+			<table width="100%">
+				<tr><td>Accuracy </td><td> {$stats->accuracy}</td></tr>
+				<tr class="alt"><td>Total Spam </td><td> {$stats->spam}</td></tr>
+				<tr><td>Total Ham </td><td> {$stats->ham}</td></tr>
+			</table>
 STATS;
 	}
 	
@@ -149,9 +154,7 @@ STATS;
 			}
 			$comment->info->defensio_signature= $result->signature;
 			$comment->info->defensio_spaminess= $result->spaminess;
-			if ( $result->message ) {
-				$comment->info->spamcheck= array_unique(array_merge((array) $comment->info->spamcheck, (array) $result->message));
-			}
+			$comment->info->spamcheck= array_unique(array_merge((array) $comment->info->spamcheck, array('Flagged as Spam by Defensio')));
 		}
 		catch ( Exception $e ) {
 			EventLog::log( $e->getMessage(), 'notice', 'comment', 'Defensio' );
@@ -184,9 +187,11 @@ STATS;
 		try {
 			if ( $false_positives ) {
 				$this->defensio->report_false_positives( array( 'signatures' => $false_positives ) );
+				Session::notice( sprintf( _t('Reported %d false positives to Defensio'), count($false_positives) ) );
 			}
 			if ( $false_negatives ) {
 				$this->defensio->report_false_negatives( array( 'signatures' => $false_negatives ) );
+				Session::notice( sprintf( _t('Reported %d false negatives to Defensio'), count($false_negatives) ) );
 			}
 		}
 		catch ( Exception $e ) {
