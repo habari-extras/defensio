@@ -18,6 +18,9 @@ class DefensioAPI
 	
 	public function __call( $action, $args )
 	{
+		if ( !$this->api_key ) {
+			throw new Exception( 'API key is required' );
+		}
 		$action= str_replace( '_', '-', $action );
 		if ( !in_array( $action, $this->valid_actions ) ) {
 			throw new Exception( 'Defensio cannot proccess ' . $action );
@@ -82,7 +85,12 @@ class DefensioParams
 		$name= str_replace( '_', '-', $name );
 		switch ( $name ) {
 			case 'signatures':
-				$this->post_data[$name]= trim( implode( ',', (array) $value ) );
+				if ( is_array( $value ) ) {
+					$this->post_data[$name]= trim( implode( ',', (array) $value ) );
+				}
+				else {
+					$this->post_data[$name]= $value;
+				}
 				break;
 			default:
 				$this->post_data[$name]= $value;
@@ -142,16 +150,21 @@ class DefensioNode
 	
 	public function __construct( SimpleXMLElement $element )
 	{
-		$this->name= $element->getName();
+		$this->name= (string) $element->getName();
 		$atts= $element->attributes();
 		if ( isset( $atts['type'] ) ) {
 			$this->type= (string) $atts['type'];
-			$this->value= $this->settype( $element, (string) $atts['type'] );
+			$this->value= $this->settype( $element, $this->type );
 		}
 		else {
 			$this->type= 'string';
 			$this->value= (string) $element;
 		}
+	}
+	
+	public function __toString()
+	{
+		return $this->value;
 	}
 	
 	private function settype( $element, $type )

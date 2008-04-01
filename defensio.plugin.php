@@ -91,9 +91,7 @@ class Defensio extends Plugin
 		if ( Options::get( 'defensio:api_key' ) == '' ) {
 			EventLog::log( 'You must enter a valid API key for Defensio to work', 'notice', 'default', 'Defensio' );
 		}
-		else {
-			$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
-		}
+		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
 	}
 	
 	public function filter_include_template_file( $file, $name )
@@ -122,9 +120,11 @@ class Defensio extends Plugin
 		// this should be a template.
 		return <<<STATS
 			<table width="100%">
-				<tr><td>Accuracy </td><td> {$stats->accuracy}</td></tr>
-				<tr class="alt"><td>Total Spam </td><td> {$stats->spam}</td></tr>
-				<tr><td>Total Ham </td><td> {$stats->ham}</td></tr>
+				<tr><td><b>RecentAccuracy:</b></td><td><b>{$stats->accuracy}</b></td></tr>
+				<tr class="alt"><td>Spam </td><td> {$stats->spam}</td></tr>
+				<tr><td>Innocents </td><td> {$stats->ham}</td></tr>
+				<tr class="alt"><td>False Positives </td><td> {$stats->false_positives}</td></tr>
+				<tr><td>False Negatives </td><td> {$stats->false_negatives}</td></tr>
 			</table>
 STATS;
 	}
@@ -248,7 +248,12 @@ STATS;
 			}
 			return $a->info->defensio_spaminess > $b->info->defensio_spaminess ? -1 : 1;
 		}
-		return 0;
+		elseif ( isset($a->info->defensio_spaminess) ) {
+			return 0;
+		}
+		else {
+			return 1;
+		}
 	}
 }
 

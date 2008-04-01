@@ -6,7 +6,7 @@
 	<div class="column span-24 last">
 		<h1><?php _e('Comments'); ?></h1>
 		<p><?php _e('Here you will find all the comments, including those deleted. You can also manage  pingbacks.'); ?></p>
-
+		
 		<div class="column span-7 first" id="stats">
 			<h3><?php _e('Comment Statistics'); ?></h3>
 			<table width="100%" cellspacing="0">
@@ -14,11 +14,26 @@
 			<tr><td><?php _e('Total Unapproved Comments'); ?></td><td><?php echo Comments::count_total( Comment::STATUS_UNAPPROVED ); ?></td></tr>
 			<tr><td><?php _e('Total Spam Comments'); ?></td><td><?php echo Comments::count_total( Comment::STATUS_SPAM ); ?></td></tr>
 			</table>
+			
+		</div>
+		
+		<div class="column span-7 first" id="defensio-stats">
 			<h3><?php _e('Defensio Statistics'); ?></h3>
 			<?php $theme->defensio_stats(); ?>
 		</div>
-
-		<div class="column span-17 last push-1">
+		
+		<div class="column span-7 last">
+			<h3>Legend</h3>
+			<table width="100%">
+				<tr><td style="background:#faa; width:5%;"></td><td>High Spaminess</td></tr>
+				<tr><td style="background:#fca; width:5%;"></td><td>Medium Spaminess</td></tr>
+				<tr><td style="background:#fea; width:5%;"></td><td>Low Spaminess</td></tr>
+				<tr><td style="background:#e2dbe3; width:5%;"></td><td>No  Spaminess</td></tr>
+			</table>
+		</div>
+		
+		<hr>
+		<div class="column span-24">
 			<form method="post" action="<?php URL::out('admin', 'page=moderate'); ?>" class="buttonform">
 			<p>
 				<label>Search comments: <input type="textbox" size="22" name="search" value="<?php echo $search; ?>"></label> <input type="submit" name="do_search" value="<?php _e('Search'); ?>">
@@ -36,6 +51,7 @@
 				<?php echo Utils::html_select('search_type', $types, $search_type, array( 'class'=>'longselect')); ?>
 			</p>
 			</form>
+
 		</div>
 
 	</div>
@@ -72,7 +88,7 @@
 			</div>
 
 			<div id="waiting">
-<?php usort($comments, array('Defensio', 'sort_by_spaminess')); foreach( $comments as $comment ) : ?>
+<?php $comments= $comments->getArrayCopy(); usort($comments, array('Defensio', 'sort_by_spaminess')); foreach( $comments as $comment ) : ?>
 			<div class="comment">
 				<div class="comment_header" style="<?php echo Defensio::get_spaminess_style( $comment ); ?>">
 				<strong>Author:</strong> <?php echo $comment->name."\r\n";?>
