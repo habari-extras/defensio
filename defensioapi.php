@@ -19,18 +19,18 @@ class DefensioAPI
 	public function __call( $action, $args )
 	{
 		if ( !$this->api_key ) {
-			throw new Exception( 'API key is required' );
+			throw new Exception( 'API Key Is Required' );
 		}
 		$action= str_replace( '_', '-', $action );
 		if ( !in_array( $action, $this->valid_actions ) ) {
-			throw new Exception( 'Defensio cannot proccess ' . $action );
+			throw new Exception( 'Invalid Action: ' . $action );
 		}
 		$params= new DefensioParams( $args?$args[0]:array() );
 		$params->owner_url= $this->owner_url;
 		
 		$response= $this->call( $action, $params );
 		if ( $response->status == 'fail' ) {
-			throw new Exception( $action . ': ' . $response->message );
+			throw new Exception( $action . ' Failed: ' . $response->message );
 		}
 		return $response;
 	}
@@ -40,12 +40,16 @@ class DefensioAPI
 		$client= new RemoteRequest( $this->build_url( $action ), 'POST' );
 		$client->set_body( $params->get_post_body() );
 		if ( $client->execute() ) {
+			$headers= self::parse_http_header( $client->get_response_headers() );
+			if ( isset( $headers['status'] ) && $headers['status'] == '401' ) {
+				throw new Exception( 'Invalid/Unauthorized API Key' );
+			}
 			$response= new DefensioResponse( $client->get_response_body() );
 			unset( $client );
 			return $response;
 		}
 		else {
-			throw new Exception( 'communication with Defensio is down.' );
+			throw new Exception( 'Server Not Responding' );
 		}
 	}
 	
@@ -58,6 +62,30 @@ class DefensioAPI
 			$this->api_key,
 			self::FORMAT
 		);
+	}
+	
+	public static function parse_http_header( $header )
+	{
+		$headers= array();
+		$header= split( "\r\n", $header );
+		foreach ( $header as $head ) {
+			if ( preg_match("@HTTP/[\S]+ (\d+) [\S]+@", $head, $status ) ) {
+				$headers['status']= $status[1];
+			}
+			elseif ( preg_match( '@([\w/\-+]+):\s*([^;]+)(;\s*([\w/\-+]+)=(\S+))?@i', $head, $matches ) ) {
+				$head= strtolower( $matches[1] );
+				if ( isset( $headers[$head] ) ) {
+					$headers[$head]= array_merge( (array) $headers[$head], (array) $matches[2] );
+				}
+				else {
+					$headers[$head]= $matches[2];
+				}
+				if ( isset( $matches[3] ) ) {
+					$headers[strtolower( $matches[4] )]= trim( $matches[5], "'\"" );
+				}
+			}
+		}
+		return $headers;
 	}
 	
 	public static function validate_api_key( $key, $owner_url )
@@ -119,7 +147,12 @@ class DefensioResponse
 	
 	public function __construct( $xml )
 	{
-		$xml= new SimpleXMLElement( $xml );
+		try {
+			$xml= new SimpleXMLElement( $xml );
+		}
+		catch ( Exception $e ) {
+			throw new Exception( 'Bad Response From Server' );
+		}
 		foreach ( $xml as $element ) {
 			$node= new DefensioNode( $element );
 			$this->nodes[$node->name]= $node;

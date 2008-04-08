@@ -25,28 +25,19 @@ class Defensio extends Plugin
 			);
 	}
 	
-	private static function default_options()
-	{
-		return array(
-			'api_key' => '',
-			'announce_posts' => 'yes',
-			);
-	}
-	
 	public function action_plugin_activation( $file )
 	{
 		if ( $file == $this->get_file() ) {
-			Session::notice( _t('Please set your Defensio API Key in the configuration.') );
-			foreach ( self::default_options() as $name => $value ) {
-				Options::set( 'defensio:' . $name, $value );
-			}
+			Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
+			Options::set( 'defensio:api_key', '' );
+			Options::set( 'defensio:announce_posts', 'yes' );
 		}
 	}
 	
 	public function filter_plugin_config( $actions, $plugin_id )
       {
 		if ( $plugin_id == $this->plugin_id() ) {
-			$actions[]= _t('Configure');
+			$actions[]= _t('Configure', 'defensio');
 		}
 		return $actions;
 	}
@@ -55,19 +46,19 @@ class Defensio extends Plugin
 	{
 		if ( $plugin_id == $this->plugin_id() ) {
 			switch ( $action ) {
-				case _t('Configure') :
+				case _t('Configure', 'defensio') :
 					$ui = new FormUI( 'defensio' );
 					
 					// Add a text control for the address you want the email sent to
-					$api_key= $ui->add( 'text', 'api_key', 'Defensio API Key: ' );
+					$api_key= $ui->add( 'text', 'api_key', _t('Defensio API Key: ', 'defensio') );
 					$api_key->add_validator( 'validate_required' );
 					$api_key->add_validator( array( $this, 'validate_api_key' ) );
 					
-					$announce_posts= $ui->add( 'select', 'announce_posts', 'Announce New Posts To Defensio: ' );
-					$announce_posts->options= array( 'yes' => _t('Yes'), 'no' => _t('No') );
+					$announce_posts= $ui->add( 'select', 'announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
+					$announce_posts->options= array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
 					$announce_posts->add_validator( 'validate_required' );
 					
-					$register= $ui->add( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.') . '</a>' );
+					$register= $ui->add( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
 					
 					$ui->out();
 					break;
@@ -81,17 +72,26 @@ class Defensio extends Plugin
 			DefensioAPI::validate_api_key( $key, Site::get_url( 'habari' ) );
 		}
 		catch ( Exception $e ) {
-			return array( sprintf( _t('Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the key is entered correctly and is <b>registered for this site (%s)</b>.'), $key, Site::get_url( 'habari' ) ) );
+			return array( sprintf( _t('Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the key is entered correctly and is <b>registered for this site (%s)</b>.', 'defensio'), $key, Site::get_url( 'habari' ) ) );
 		}
 		return array();
 	}
 	
-	public function action_init()
+	// don't load defensio if no api key was provided
+	public function load()
 	{
 		if ( Options::get( 'defensio:api_key' ) == '' ) {
-			EventLog::log( 'You must enter a valid API key for Defensio to work', 'notice', 'default', 'Defensio' );
+			EventLog::log( _t('You must enter a valid API key for Defensio to work', 'defensio'), 'notice', 'default', 'Defensio' );
 		}
+		else {
+			parent::load();
+		}
+	}
+	
+	public function action_init()
+	{
 		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
+		$this->load_text_domain( 'defensio' );
 	}
 	
 	public function filter_include_template_file( $file, $name )
@@ -152,7 +152,7 @@ STATS;
 			$result= $this->defensio->audit_comment( $params );
 			if ( $result->spam == true ) {
 				$comment->status= 'spam';
-				$comment->info->spamcheck= array_unique(array_merge((array) $comment->info->spamcheck, array('Flagged as Spam by Defensio')));
+				$comment->info->spamcheck= array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
 			}
 			$comment->info->defensio_signature= $result->signature;
 			$comment->info->defensio_spaminess= $result->spaminess;
@@ -162,8 +162,6 @@ STATS;
 		}
 	}
 	
-	// this is an actio I added to filter moderated comments for spam filter training.
-	// It needs to be added to habari for Defensio training to work.
 	public function action_admin_moderate_comments( $comment_ids, $comments, $handler )
 	{
 		$false_positives= array();
@@ -188,11 +186,11 @@ STATS;
 		try {
 			if ( $false_positives ) {
 				$this->defensio->report_false_positives( array( 'signatures' => $false_positives ) );
-				Session::notice( sprintf( _t('Reported %d false positives to Defensio'), count($false_positives) ) );
+				Session::notice( sprintf( _t('Reported %d false positives to Defensio', 'defensio'), count($false_positives) ) );
 			}
 			if ( $false_negatives ) {
 				$this->defensio->report_false_negatives( array( 'signatures' => $false_negatives ) );
-				Session::notice( sprintf( _t('Reported %d false negatives to Defensio'), count($false_negatives) ) );
+				Session::notice( sprintf( _t('Reported %d false negatives to Defensio', 'defensio'), count($false_negatives) ) );
 			}
 		}
 		catch ( Exception $e ) {
