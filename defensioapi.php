@@ -25,7 +25,8 @@ class DefensioAPI
 		if ( !in_array( $action, $this->valid_actions ) ) {
 			throw new Exception( 'Invalid Action: ' . $action );
 		}
-		$params= new DefensioParams( $args?$args[0]:array() );
+		$params= $args ? $args[0] : array();
+		$params= $params instanceof DefensioParams ? $params : new DefensioParams( $params );
 		$params->owner_url= $this->owner_url;
 		
 		$response= $this->call( $action, $params );
@@ -40,8 +41,7 @@ class DefensioAPI
 		$client= new RemoteRequest( $this->build_url( $action ), 'POST' );
 		$client->set_body( $params->get_post_body() );
 		if ( $client->execute() ) {
-			$headers= self::parse_http_header( $client->get_response_headers() );
-			if ( isset( $headers['status'] ) && $headers['status'] == '401' ) {
+			if ( self::get_http_status( $client->get_response_headers() ) == '401' ) {
 				throw new Exception( 'Invalid/Unauthorized API Key' );
 			}
 			$response= new DefensioResponse( $client->get_response_body() );
@@ -64,28 +64,15 @@ class DefensioAPI
 		);
 	}
 	
-	public static function parse_http_header( $header )
+	public static function get_http_status( $header )
 	{
-		$headers= array();
 		$header= split( "\r\n", $header );
 		foreach ( $header as $head ) {
-			if ( preg_match("@HTTP/[\S]+ (\d+) [\S]+@", $head, $status ) ) {
-				$headers['status']= $status[1];
-			}
-			elseif ( preg_match( '@([\w/\-+]+):\s*([^;]+)(;\s*([\w/\-+]+)=(\S+))?@i', $head, $matches ) ) {
-				$head= strtolower( $matches[1] );
-				if ( isset( $headers[$head] ) ) {
-					$headers[$head]= array_merge( (array) $headers[$head], (array) $matches[2] );
-				}
-				else {
-					$headers[$head]= $matches[2];
-				}
-				if ( isset( $matches[3] ) ) {
-					$headers[strtolower( $matches[4] )]= trim( $matches[5], "'\"" );
-				}
+			if ( preg_match( "@HTTP/[\S]+ (\d+) [\S]+@", $head, $status ) ) {
+				return $status[1];
 			}
 		}
-		return $headers;
+		return null;
 	}
 	
 	public static function validate_api_key( $key, $owner_url )

@@ -77,17 +77,6 @@ class Defensio extends Plugin
 		return array();
 	}
 	
-	// don't load defensio if no api key was provided
-	public function load()
-	{
-		if ( Options::get( 'defensio:api_key' ) == '' ) {
-			EventLog::log( _t('You must enter a valid API key for Defensio to work', 'defensio'), 'notice', 'default', 'Defensio' );
-		}
-		else {
-			parent::load();
-		}
-	}
-	
 	public function action_init()
 	{
 		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
@@ -142,11 +131,15 @@ STATS;
 			'comment-author-url' => $comment->url ? $comment->url : null,
 			'permalink' => $comment->post->permalink,
 			'referrer' => $_SERVER['HTTP_REFERER'] ? $_SERVER['HTTP_REFERER'] : null,
-			'user-logged-in' => $user instanceof User,
-			'trusted-user' => $user instanceof User, // test for administrator, editor, etc. as well
-			//'openid' => '',
-			//'test-force' => 'spam,0.2',
 		);
+		if ( $user instanceof User ) {
+			$params['user-logged-in']= $user instanceof User;
+			// test for administrator, editor, etc. as well
+			$params['trusted-user']= $user instanceof User;
+			if ( $user->info->openid_url ) {
+				$params['openid']= $user->info->openid_url;
+			}
+		}
 		
 		try {
 			$result= $this->defensio->audit_comment( $params );
@@ -216,11 +209,6 @@ STATS;
 				EventLog::log( $e->getMessage(), 'notice', 'content', 'Defensio' );
 			}
 		}
-	}
-	
-	public function action_post_update_after( $post )
-	{
-		$this->action_post_insert_after( $post );
 	}
 	
 	public static function get_spaminess_style( $comment )
