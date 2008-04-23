@@ -166,11 +166,13 @@ STATS;
 					if ( ( $comment->status == Comment::STATUS_APPROVED || $comment->status == Comment::STATUS_UNAPPROVED )
 						&& isset($comment->info->defensio_signature) ) {
 						$false_negatives[]= $comment->info->defensio_signature;
+						Cache::expire('defensio_stats');
 					}
 					break;
 				case 'approve':
 					if ( $comment->status == Comment::STATUS_SPAM && isset($comment->info->defensio_signature) ) {
 						$false_positives[]= $comment->info->defensio_signature;
+						Cache::expire('defensio_stats');
 					}
 					break;
 			}
