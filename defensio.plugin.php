@@ -5,10 +5,10 @@ require_once "defensioapi.php";
 class Defensio extends Plugin
 {
 	private $defensio;
-	
+
 	public function info()
 	{
-		return array( 
+		return array(
 			'name' => 'Defensio',
 			'author' => 'Habari Community',
 			'description' => 'Provides the Defensio spam filter webservice to Habari comments.',
@@ -17,14 +17,14 @@ class Defensio extends Plugin
 			'license' => 'Apache License 2.0'
 			);
 	}
-	
+
 	public function set_priorities()
 	{
 		return array(
 			'action_comment_insert_before' => 1
 			);
 	}
-	
+
 	public function action_plugin_activation( $file )
 	{
 		if ( $file == $this->get_file() ) {
@@ -33,7 +33,7 @@ class Defensio extends Plugin
 			Options::set( 'defensio:announce_posts', 'yes' );
 		}
 	}
-	
+
 	public function filter_plugin_config( $actions, $plugin_id )
       {
 		if ( $plugin_id == $this->plugin_id() ) {
@@ -48,24 +48,24 @@ class Defensio extends Plugin
 			switch ( $action ) {
 				case _t('Configure', 'defensio') :
 					$ui = new FormUI( 'defensio' );
-					
+
 					// Add a text control for the address you want the email sent to
 					$api_key= $ui->add( 'text', 'api_key', _t('Defensio API Key: ', 'defensio') );
 					$api_key->add_validator( 'validate_required' );
 					$api_key->add_validator( array( $this, 'validate_api_key' ) );
-					
+
 					$announce_posts= $ui->add( 'select', 'announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
 					$announce_posts->options= array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
 					$announce_posts->add_validator( 'validate_required' );
-					
+
 					$register= $ui->add( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
-					
+
 					$ui->out();
 					break;
 			}
 		}
 	}
-	
+
 	public function validate_api_key( $key )
 	{
 		try {
@@ -76,13 +76,13 @@ class Defensio extends Plugin
 		}
 		return array();
 	}
-	
+
 	public function action_init()
 	{
 		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
 		$this->load_text_domain( 'defensio' );
 	}
-	
+
 	public function filter_include_template_file( $file, $name )
 	{
 		if ( $name == 'moderate' ) {
@@ -90,7 +90,7 @@ class Defensio extends Plugin
 		}
 		return $file;
 	}
-	
+
 	public function theme_defensio_stats()
 	{
 		if ( Cache::has( 'defensio_stats' ) ) {
@@ -117,7 +117,7 @@ class Defensio extends Plugin
 			</table>
 STATS;
 	}
-	
+
 	public function action_comment_insert_before( $comment )
 	{
 		$user= User::identify();
@@ -140,7 +140,7 @@ STATS;
 				$params['openid']= $user->info->openid_url;
 			}
 		}
-		
+
 		try {
 			$result= $this->defensio->audit_comment( $params );
 			if ( $result->spam == true ) {
@@ -154,12 +154,12 @@ STATS;
 			EventLog::log( $e->getMessage(), 'notice', 'comment', 'Defensio' );
 		}
 	}
-	
+
 	public function action_admin_moderate_comments( $comment_ids, $comments, $handler )
 	{
 		$false_positives= array();
 		$false_negatives= array();
-		
+
 		foreach ( $comments as $comment ) {
 			switch ( $comment_ids[$comment->id] ) {
 				case 'spam':
@@ -177,7 +177,7 @@ STATS;
 					break;
 			}
 		}
-		
+
 		try {
 			if ( $false_positives ) {
 				$this->defensio->report_false_positives( array( 'signatures' => $false_positives ) );
@@ -192,7 +192,7 @@ STATS;
 			EventLog::log( $e->getMessage(), 'notice', 'comment', 'Defensio' );
 		}
 	}
-	
+
 	public function action_post_insert_after( $post )
 	{
 		if ( Options::get( 'defensio:announce_posts' ) == 'yes' && $post->statusname == 'published' ) {
@@ -203,7 +203,7 @@ STATS;
 				'article-content' => $post->content,
 				'permalink' => $post->permalink
 			);
-			
+
 			try {
 				$result= $this->defensio->announce_article( $params );
 			}
@@ -212,7 +212,7 @@ STATS;
 			}
 		}
 	}
-	
+
 	public static function get_spaminess_style( $comment )
 	{
 		if ( isset($comment->info->defensio_spaminess) ) {
@@ -227,7 +227,7 @@ STATS;
 		}
 		return 'background:#e2dbe3;';
 	}
-	
+
 	public function sort_by_spaminess( $a, $b )
 	{
 		if ( isset($a->info->defensio_spaminess) && isset($b->info->defensio_spaminess) ) {
