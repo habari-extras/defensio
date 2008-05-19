@@ -81,15 +81,37 @@ class Defensio extends Plugin
 	{
 		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
 		$this->load_text_domain( 'defensio' );
+		$this->add_template( 'defensio', dirname(__FILE__) . '/moderate.php' );
+
+	}
+	
+	function action_admin_theme_get_spam( $handler, $theme )
+	{
+		$handler->fetch_comments( array( 'search_status' => 2, 'limit' => 60 ) );
+		$theme->display( 'defensio' );
+		exit;
+	}
+	
+	function action_admin_theme_post_spam( $handler, $theme )
+	{
+		$this->action_admin_theme_get_spam( $handler, $theme );
+	}
+	
+	function filter_adminhandler_post_loadplugins_main_menu( $menu )
+	{
+		$menu['spam']= array( 'url' => URL::get( 'admin', 'page=spam' ), 'title' => _t('Manage all spam in the spam vault','defensio'), 'text' => _t('Spam Vault','defensio'), 'hotkey' => 'S', 'selected' => false );
+		return $menu;
+	}
+	
+	public function filter_admin_modules( $modules )
+	{
+		$modules['defensio']= '<div class="options">&nbsp;</div><div class="modulecore">
+			<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' . 
+			$this->theme_defensio_stats() .
+			'</div>';
+		return $modules;
 	}
 
-	public function filter_include_template_file( $file, $name )
-	{
-		if ( $name == 'moderate' ) {
-			return dirname( __FILE__ ) . '/moderate.php';
-		}
-		return $file;
-	}
 
 	public function theme_defensio_stats()
 	{
@@ -122,7 +144,7 @@ STATS;
 	{
 		$user= User::identify();
 		$params= array(
-			'user-ip' => long2ip( $comment->ip ),
+			'user-ip' => $comment->ip,
 			'article-date' => date( 'Y/m/d', strtotime( $comment->post->pubdate ) ),
 			'comment-author' => $comment->name,
 			'comment-type' => strtolower( Comment::type_name( $comment->type ) ),
@@ -130,7 +152,7 @@ STATS;
 			'comment-author-email' => $comment->email ? $comment->email : null,
 			'comment-author-url' => $comment->url ? $comment->url : null,
 			'permalink' => $comment->post->permalink,
-			'referrer' => isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null,
+			'referrer' => $_SERVER['HTTP_REFERER'] ? $_SERVER['HTTP_REFERER'] : null,
 		);
 		if ( $user instanceof User ) {
 			$params['user-logged-in']= $user instanceof User;
