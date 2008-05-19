@@ -122,7 +122,7 @@ STATS;
 	{
 		$user= User::identify();
 		$params= array(
-			'user-ip' => $comment->ip,
+			'user-ip' => long2ip( $comment->ip ),
 			'article-date' => date( 'Y/m/d', strtotime( $comment->post->pubdate ) ),
 			'comment-author' => $comment->name,
 			'comment-type' => strtolower( Comment::type_name( $comment->type ) ),
