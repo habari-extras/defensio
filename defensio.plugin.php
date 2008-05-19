@@ -144,7 +144,7 @@ STATS;
 	{
 		$user= User::identify();
 		$params= array(
-			'user-ip' => $comment->ip,
+			'user-ip' => long2ip( $comment->ip ),
 			'article-date' => date( 'Y/m/d', strtotime( $comment->post->pubdate ) ),
 			'comment-author' => $comment->name,
 			'comment-type' => strtolower( Comment::type_name( $comment->type ) ),
@@ -152,7 +152,7 @@ STATS;
 			'comment-author-email' => $comment->email ? $comment->email : null,
 			'comment-author-url' => $comment->url ? $comment->url : null,
 			'permalink' => $comment->post->permalink,
-			'referrer' => $_SERVER['HTTP_REFERER'] ? $_SERVER['HTTP_REFERER'] : null,
+			'referrer' => isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null,
 		);
 		if ( $user instanceof User ) {
 			$params['user-logged-in']= $user instanceof User;
