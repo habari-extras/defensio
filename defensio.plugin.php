@@ -130,7 +130,7 @@ STATS;
 			'comment-author-email' => $comment->email ? $comment->email : null,
 			'comment-author-url' => $comment->url ? $comment->url : null,
 			'permalink' => $comment->post->permalink,
-			'referrer' => $_SERVER['HTTP_REFERER'] ? $_SERVER['HTTP_REFERER'] : null,
+			'referrer' => isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null,
 		);
 		if ( $user instanceof User ) {
 			$params['user-logged-in']= $user instanceof User;
