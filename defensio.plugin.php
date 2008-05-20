@@ -128,15 +128,26 @@ class Defensio extends Plugin
 				return null;
 			}
 		}
+		$accuracy= sprintf( '%.2f', $stats->accuracy * 100 );
 		// this should be a template.
 		return <<<STATS
-			<table width="100%">
-				<tr><td><b>RecentAccuracy:</b></td><td><b>{$stats->accuracy}</b></td></tr>
-				<tr class="alt"><td>Spam </td><td> {$stats->spam}</td></tr>
-				<tr><td>Innocents </td><td> {$stats->ham}</td></tr>
-				<tr class="alt"><td>False Positives </td><td> {$stats->false_positives}</td></tr>
-				<tr><td>False Negatives </td><td> {$stats->false_negatives}</td></tr>
-			</table>
+			<ul class=items">
+				<li class="item clear">
+					<span class="title pct80"><b>Recent Accuracy</b></span><span class="comments pct20">{$accuracy}%</span>
+				</li>
+				<li class="item clear">
+					<span class="pct80">Spam</span><span class="comments pct20">{$stats->spam}</span>
+				</li>
+				<li class="item clear">
+					<span class="pct80">Innocents</span><span class="comments pct20">{$stats->ham}</span>
+				</li>
+				<li class="item clear">
+					<span class="pct80">False Negatives</span><span class="comments pct20">{$stats->false_negatives}</span>
+				</li>
+				<li class="item clear">
+					<span class="pct80">False Positives</span><span class="comments pct20">{$stats->false_positives}</span>
+				</li>
+			</ul>
 STATS;
 	}
 
