@@ -22,7 +22,7 @@ class Defensio extends Plugin
 	{
 		return array(
 			'action_comment_insert_before' => 1
-			);
+		);
 	}
 
 	public function action_plugin_activation( $file )
@@ -35,7 +35,7 @@ class Defensio extends Plugin
 	}
 
 	public function filter_plugin_config( $actions, $plugin_id )
-      {
+	{
 		if ( $plugin_id == $this->plugin_id() ) {
 			$actions[]= _t('Configure', 'defensio');
 		}
@@ -82,36 +82,34 @@ class Defensio extends Plugin
 		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
 		$this->load_text_domain( 'defensio' );
 		$this->add_template( 'defensio', dirname(__FILE__) . '/moderate.php' );
-
 	}
-	
+
 	function action_admin_theme_get_spam( $handler, $theme )
 	{
 		$handler->fetch_comments( array( 'search_status' => 2, 'limit' => 60 ) );
 		$theme->display( 'defensio' );
 		exit;
 	}
-	
+
 	function action_admin_theme_post_spam( $handler, $theme )
 	{
 		$this->action_admin_theme_get_spam( $handler, $theme );
 	}
-	
+
 	function filter_adminhandler_post_loadplugins_main_menu( $menu )
 	{
 		$menu['spam']= array( 'url' => URL::get( 'admin', 'page=spam' ), 'title' => _t('Manage all spam in the spam vault','defensio'), 'text' => _t('Spam Vault','defensio'), 'hotkey' => 'S', 'selected' => false );
 		return $menu;
 	}
-	
+
 	public function filter_admin_modules( $modules )
 	{
-		$modules['defensio']= '<div class="options">&nbsp;</div><div class="modulecore">
-			<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' . 
+		$modules['defensio']= '<div class="modulecore">
+			<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
 			$this->theme_defensio_stats() .
 			'</div>';
 		return $modules;
 	}
-
 
 	public function theme_defensio_stats()
 	{
