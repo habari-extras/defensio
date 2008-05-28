@@ -13,7 +13,7 @@ class Defensio extends Plugin
 			'author' => 'Habari Community',
 			'description' => 'Provides the Defensio spam filter webservice to Habari comments.',
 			'url' => 'http://habariproject.org',
-			'version' => '0.1',
+			'version' => '0.2',
 			'license' => 'Apache License 2.0'
 			);
 	}
@@ -186,13 +186,13 @@ STATS;
 		}
 	}
 
-	public function action_admin_moderate_comments( $comment_ids, $comments, $handler )
+	public function action_admin_moderate_comments( $action, $comments, $handler )
 	{
 		$false_positives= array();
 		$false_negatives= array();
 
 		foreach ( $comments as $comment ) {
-			switch ( $comment_ids[$comment->id] ) {
+			switch ( $action ) {
 				case 'spam':
 					if ( ( $comment->status == Comment::STATUS_APPROVED || $comment->status == Comment::STATUS_UNAPPROVED )
 						&& isset($comment->info->defensio_signature) ) {
