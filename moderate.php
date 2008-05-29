@@ -14,7 +14,7 @@
 	<input type="hidden" name="search" value="<?php echo $search; ?>">
 	<input type="hidden" name="limit" value="<?php echo $limit; ?>">
 	<input type="hidden" name="index" value="<?php echo isset($index)?$index:''; ?>">
-	<input type="hidden" name="search_status" value="<?php echo $search_status; ?>">
+	<input type="hidden" name="status" value="<?php echo $status; ?>">
 	<input type="hidden" name="nonce" value="<?php echo $wsse['nonce']; ?>">
 	<input type="hidden" name="timestamp" value="<?php echo $wsse['timestamp']; ?>">
 	<input type="hidden" name="PasswordDigest" value="<?php echo $wsse['digest']; ?>">

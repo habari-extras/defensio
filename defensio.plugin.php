@@ -86,7 +86,7 @@ class Defensio extends Plugin
 
 	function action_admin_theme_get_spam( $handler, $theme )
 	{
-		$handler->fetch_comments( array( 'search_status' => 2, 'limit' => 60 ) );
+		$handler->fetch_comments( array( 'status' => 2, 'limit' => 60 ) );
 		$theme->display( 'defensio' );
 		exit;
 	}
