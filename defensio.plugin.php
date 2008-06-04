@@ -50,16 +50,18 @@ class Defensio extends Plugin
 					$ui = new FormUI( 'defensio' );
 
 					// Add a text control for the address you want the email sent to
-					$api_key= $ui->add( 'text', 'api_key', _t('Defensio API Key: ', 'defensio') );
+					$api_key= $ui->append( 'text', 'api_key', 'option:defensio__api_key', _t('Defensio API Key: ', 'defensio') );
 					$api_key->add_validator( 'validate_required' );
 					$api_key->add_validator( array( $this, 'validate_api_key' ) );
 
-					$announce_posts= $ui->add( 'select', 'announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
+					$announce_posts= $ui->append( 'select', 'announce_posts', 'option:defensio__announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
 					$announce_posts->options= array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
 					$announce_posts->add_validator( 'validate_required' );
 
-					$register= $ui->add( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
+					$register= $ui->append( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
 
+					$ui->append( 'submit', 'save', _t( 'Save' ) );
+					$ui->set_option( 'success_message', _t( 'Configuration saved' ) );
 					$ui->out();
 					break;
 			}
@@ -79,7 +81,7 @@ class Defensio extends Plugin
 
 	public function action_init()
 	{
-		$this->defensio= new DefensioAPI( Options::get( 'defensio:api_key' ), Site::get_url( 'habari' ) );
+		$this->defensio= new DefensioAPI( Options::get( 'defensio__api_key' ), Site::get_url( 'habari' ) );
 		$this->load_text_domain( 'defensio' );
 		$this->add_template( 'defensio', dirname(__FILE__) . '/moderate.php' );
 	}
@@ -104,9 +106,9 @@ class Defensio extends Plugin
 
 	public function filter_admin_modules( $modules )
 	{
-		$modules['defensio:1']= array( 
-			'name' => 'Defensio Stats', 
-			'content' => 
+		$modules['defensio:1']= array(
+			'name' => 'defensio',
+			'content' =>
 				'<div class="modulecore">' .
 				'<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
 				$this->theme_defensio_stats() .
@@ -230,7 +232,7 @@ STATS;
 
 	public function action_post_insert_after( $post )
 	{
-		if ( Options::get( 'defensio:announce_posts' ) == 'yes' && $post->statusname == 'published' ) {
+		if ( Options::get( 'defensio__announce_posts' ) == 'yes' && $post->statusname == 'published' ) {
 			$params= array(
 				'article-author' => $post->author->username,
 				'article-author-email' => $post->author->email,
