@@ -104,10 +104,14 @@ class Defensio extends Plugin
 
 	public function filter_admin_modules( $modules )
 	{
-		$modules['defensio']= '<div class="modulecore">
-			<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
-			$this->theme_defensio_stats() .
-			'</div>';
+		$modules['defensio:1']= array( 
+			'name' => 'Defensio Stats', 
+			'content' => 
+				'<div class="modulecore">' .
+				'<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
+				$this->theme_defensio_stats() .
+				'</div>'
+			);
 		return $modules;
 	}
 
