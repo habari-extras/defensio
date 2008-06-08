@@ -27,7 +27,9 @@ class Defensio extends Plugin
 
 	public function action_plugin_activation( $file )
 	{
-		if ( $file == $this->get_file() ) {
+		if ( realpath( $file ) == __FILE__ ) {
+			Modules::register( 'Defensio' );
+			Modules::add( 'Defensio' );
 			Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
 			Options::set( 'defensio:api_key', '' );
 			Options::set( 'defensio:announce_posts', 'yes' );
@@ -40,6 +42,13 @@ class Defensio extends Plugin
 			$actions[]= _t('Configure', 'defensio');
 		}
 		return $actions;
+	}
+
+	public function action_plugin_unactivation( $file )
+	{
+		if ( realpath( $file ) == __FILE__ ) {
+			Modules::unregister( 'Defensio' );
+		}
 	}
 
 	public function action_plugin_ui( $plugin_id, $action )
@@ -104,17 +113,13 @@ class Defensio extends Plugin
 		return $menu;
 	}
 
-	public function filter_admin_modules( $modules )
+	public function filter_dash_module_defensio( $module_id )
 	{
-		$modules['defensio:1']= array(
-			'name' => 'defensio',
-			'content' =>
-				'<div class="modulecore">' .
-				'<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
-				$this->theme_defensio_stats() .
-				'</div>'
-			);
-		return $modules;
+		return
+			'<div class="modulecore">' .
+			'<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
+			$this->theme_defensio_stats() .
+			'</div>';
 	}
 
 	public function theme_defensio_stats()
