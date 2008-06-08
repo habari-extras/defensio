@@ -31,8 +31,8 @@ class Defensio extends Plugin
 			Modules::register( 'Defensio' );
 			Modules::add( 'Defensio' );
 			Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
-			Options::set( 'defensio:api_key', '' );
-			Options::set( 'defensio:announce_posts', 'yes' );
+			Options::set( 'defensio__api_key', '' );
+			Options::set( 'defensio__announce_posts', 'yes' );
 		}
 	}
 
@@ -69,8 +69,8 @@ class Defensio extends Plugin
 
 					$register= $ui->append( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
 
-					$ui->append( 'submit', 'save', _t( 'Save' ) );
-					$ui->set_option( 'success_message', _t( 'Configuration saved' ) );
+					$ui->append( 'submit', 'save', _t( 'Save', 'defensio' ) );
+					$ui->set_option( 'success_message', _t( 'Configuration saved', 'defensio' ) );
 					$ui->out();
 					break;
 			}
