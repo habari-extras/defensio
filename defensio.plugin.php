@@ -44,7 +44,7 @@ class Defensio extends Plugin
 		return $actions;
 	}
 
-	public function action_plugin_unactivation( $file )
+	public function action_plugin_deactivation( $file )
 	{
 		if ( realpath( $file ) == __FILE__ ) {
 			Modules::unregister( 'Defensio' );
