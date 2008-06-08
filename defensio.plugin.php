@@ -13,7 +13,7 @@ class Defensio extends Plugin
 			'author' => 'Habari Community',
 			'description' => 'Provides the Defensio spam filter webservice to Habari comments.',
 			'url' => 'http://habariproject.org',
-			'version' => '0.2',
+			'version' => '0.3',
 			'license' => 'Apache License 2.0'
 			);
 	}
@@ -115,11 +115,17 @@ class Defensio extends Plugin
 
 	public function filter_dash_module_defensio( $module_id )
 	{
-		return
-			'<div class="modulecore">' .
-			'<h2>Defensio Stats</h2><div class="handle">&nbsp;</div>' .
-			$this->theme_defensio_stats() .
-			'</div>';
+		$theme= Themes::create( 'defensio', 'RawPHPEngine', dirname( __FILE__ ) . '/' );
+
+		$stats= $this->theme_defensio_stats();
+
+		$theme->accuracy= sprintf( '%.2f', $stats->accuracy * 100 );
+		$theme->spam= $stats->spam;
+		$theme->ham= $stats->ham;
+		$theme->false_negatives= $stats->false_negatives;
+		$theme->false_positives= $stats->false_positives;
+		
+		return $theme->fetch( 'dash_defensio' );
 	}
 
 	public function theme_defensio_stats()
@@ -137,27 +143,8 @@ class Defensio extends Plugin
 				return null;
 			}
 		}
-		$accuracy= sprintf( '%.2f', $stats->accuracy * 100 );
-		// this should be a template.
-		return <<<STATS
-			<ul class=items">
-				<li class="item clear">
-					<span class="title pct80"><b>Recent Accuracy</b></span><span class="comments pct20">{$accuracy}%</span>
-				</li>
-				<li class="item clear">
-					<span class="pct80">Spam</span><span class="comments pct20">{$stats->spam}</span>
-				</li>
-				<li class="item clear">
-					<span class="pct80">Innocents</span><span class="comments pct20">{$stats->ham}</span>
-				</li>
-				<li class="item clear">
-					<span class="pct80">False Negatives</span><span class="comments pct20">{$stats->false_negatives}</span>
-				</li>
-				<li class="item clear">
-					<span class="pct80">False Positives</span><span class="comments pct20">{$stats->false_positives}</span>
-				</li>
-			</ul>
-STATS;
+
+		return $stats;
 	}
 
 	public function action_comment_insert_before( $comment )
