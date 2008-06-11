@@ -28,10 +28,25 @@ class Defensio extends Plugin
 	public function action_plugin_activation( $file )
 	{
 		if ( realpath( $file ) == __FILE__ ) {
+			Modules::add( 'Defensio' );
 			Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
 			Options::set( 'defensio__api_key', '' );
 			Options::set( 'defensio__announce_posts', 'yes' );
 		}
+	}
+
+	public function action_plugin_deactivation( $file )
+	{
+		if ( realpath( $file ) == __FILE__ ) {
+			Modules::remove_by_name( 'Defensio' );
+		}
+	}
+
+	public function filter_dash_modules( $modules )
+	{
+		array_push( $modules, 'Defensio' );
+		$this->add_template( 'dash_defensio', dirname( __FILE__ ) . '/dash_defensio.php' );
+		return $modules;
 	}
 
 	public function filter_plugin_config( $actions, $plugin_id )
