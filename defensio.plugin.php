@@ -28,8 +28,6 @@ class Defensio extends Plugin
 	public function action_plugin_activation( $file )
 	{
 		if ( realpath( $file ) == __FILE__ ) {
-			Modules::register( 'Defensio' );
-			Modules::add( 'Defensio' );
 			Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
 			Options::set( 'defensio__api_key', '' );
 			Options::set( 'defensio__announce_posts', 'yes' );
@@ -42,13 +40,6 @@ class Defensio extends Plugin
 			$actions[]= _t('Configure', 'defensio');
 		}
 		return $actions;
-	}
-
-	public function action_plugin_deactivation( $file )
-	{
-		if ( realpath( $file ) == __FILE__ ) {
-			Modules::unregister( 'Defensio' );
-		}
 	}
 
 	public function action_plugin_ui( $plugin_id, $action )
@@ -113,9 +104,9 @@ class Defensio extends Plugin
 		return $menu;
 	}
 
-	public function filter_dash_module_defensio( $module_id )
+	public function filter_dash_module_defensio( $module, $module_id, $theme )
 	{
-		$theme= Themes::create( 'defensio', 'RawPHPEngine', dirname( __FILE__ ) . '/' );
+		$this->add_template( 'dash_defensio', dirname( __FILE__ ) . '/dash_defensio.php' );
 
 		$stats= $this->theme_defensio_stats();
 
@@ -125,7 +116,8 @@ class Defensio extends Plugin
 		$theme->false_negatives= $stats->false_negatives;
 		$theme->false_positives= $stats->false_positives;
 		
-		return $theme->fetch( 'dash_defensio' );
+		$module['content'] = $theme->fetch( 'dash_defensio' );
+		return $module;
 	}
 
 	public function theme_defensio_stats()
