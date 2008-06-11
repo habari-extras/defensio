@@ -44,7 +44,7 @@ class Defensio extends Plugin
 
 	public function filter_dash_modules( $modules )
 	{
-		array_push( $modules, 'Defensio' );
+		$modules[]= 'Defensio';
 		$this->add_template( 'dash_defensio', dirname( __FILE__ ) . '/dash_defensio.php' );
 		return $modules;
 	}
