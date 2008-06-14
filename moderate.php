@@ -52,10 +52,10 @@
     <span class="time pct10"><a href="#"><span class="dim">at</span> <?php echo date('H:i', strtotime($comment->date));?></a></span>
     <span class="date pct15"><a href="#"><span class="dim">on</span> <?php echo date('M d, Y', strtotime($comment->date));?></a></span>
 		<ul class="dropbutton">
-			<li><a href="#" onclick="itemManage.update(<?php echo $comment->id; ?>, 'delete');return false;">Delete</a></li>
-			<li><a href="#" onclick="itemManage.update(<?php echo $comment->id; ?>, 'spam');return false;">Spam</a></li>
-			<li><a href="#" onclick="itemManage.update(<?php echo $comment->id; ?>, 'approve');return false;">Approve</a></li>
-			<li><a href="#" onclick="itemManage.update(<?php echo $comment->id; ?>, 'unapprove');return false;">Unapprove</a></li>
+			<li><a href="#" onclick="itemManage.update( 'delete', <?php echo $comment->id; ?> );return false;">Delete</a></li>
+			<li><a href="#" onclick="itemManage.update( 'spam', <?php echo $comment->id; ?> );return false;">Spam</a></li>
+			<li><a href="#" onclick="itemManage.update( 'approve', <?php echo $comment->id; ?> );return false;">Approve</a></li>
+			<li><a href="#" onclick="itemManage.update( 'unapprove', <?php echo $comment->id; ?> );return false;">Unapprove</a></li>
 			<li><a href="#">Edit</a></li>
 		</ul>
 	</div>
@@ -103,13 +103,13 @@
 </form>
 
 <script type="text/javascript">
-timelineHandle.loupeUpdate = function(a,b,c) {
+timelineHandle.loupeUpdate = function() {
 	spinner.start();
 
 	$.ajax({
 		type: "POST",
 		url: "<?php echo URL::get('admin_ajax', array('context' => 'comments')); ?>",
-		data: "offset=" + (parseInt(c) - parseInt(b)) + "&limit=" + (parseInt(b) - parseInt(a)) +
+		data: "limit=60" +
 			<?php
 				$vars= Controller::get_handler_vars();
 				$out= '';
@@ -124,11 +124,19 @@ timelineHandle.loupeUpdate = function(a,b,c) {
 			$('#comments').html(json.items);
 			spinner.stop();
 			itemManage.initItems();
-			$('.modulecore .item:first-child, ul li:first-child').addClass('first-child').show();
-			$('.modulecore .item:last-child, ul li:last-child').addClass('last-child');
+			findChildren();
 		}
 	});
 };
+itemManage.update = function( action, id ) {
+	if ( id ) {
+		itemManage.selected['p' + id] = 1;
+	}
+	itemManage.initItems();
+
+	selector = 'form .' + action + 'button:first';
+	$(selector).click();
+}
 </script>
 
 

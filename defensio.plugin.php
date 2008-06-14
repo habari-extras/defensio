@@ -13,7 +13,7 @@ class Defensio extends Plugin
 			'author' => 'Habari Community',
 			'description' => 'Provides the Defensio spam filter webservice to Habari comments.',
 			'url' => 'http://habariproject.org',
-			'version' => '0.3',
+			'version' => '0.4',
 			'license' => 'Apache License 2.0'
 			);
 	}
@@ -121,8 +121,6 @@ class Defensio extends Plugin
 
 	public function filter_dash_module_defensio( $module, $module_id, $theme )
 	{
-		$this->add_template( 'dash_defensio', dirname( __FILE__ ) . '/dash_defensio.php' );
-
 		$stats= $this->theme_defensio_stats();
 
 		$theme->accuracy= sprintf( '%.2f', $stats->accuracy * 100 );
@@ -131,6 +129,7 @@ class Defensio extends Plugin
 		$theme->false_negatives= $stats->false_negatives;
 		$theme->false_positives= $stats->false_positives;
 		
+		$module['title'] = '<a href="' . Site::get_url('admin') . '/spam">' . _t('Defensio') . '</a>';
 		$module['content'] = $theme->fetch( 'dash_defensio' );
 		return $module;
 	}
