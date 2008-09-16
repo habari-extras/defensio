@@ -269,7 +269,7 @@ class Defensio extends Plugin
 		return 'background:#e2dbe3;';
 	}
 
-	public function sort_by_spaminess( $a, $b )
+	public static function sort_by_spaminess( $a, $b )
 	{
 		if ( isset($a->info->defensio_spaminess) && isset($b->info->defensio_spaminess) ) {
 			if ( $a->info->defensio_spaminess == $b->info->defensio_spaminess ) {
