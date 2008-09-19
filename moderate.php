@@ -111,9 +111,9 @@ timelineHandle.loupeUpdate = function() {
 		url: "<?php echo URL::get('admin_ajax', array('context' => 'comments')); ?>",
 		data: "limit=60" +
 			<?php
-				$vars= Controller::get_handler_vars();
-				$out= '';
-				$keys= array_keys($vars);
+				$vars = Controller::get_handler_vars();
+				$out = '';
+				$keys = array_keys($vars);
 				foreach($keys as $key) {
 					$out .= "&$key=$vars[$key]";
 				}

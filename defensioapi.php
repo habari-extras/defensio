@@ -2,18 +2,18 @@
 
 class DefensioAPI
 {
-	const API_VERSION= '1.2';
-	const FORMAT= 'xml';
-	const SERVICE_TYPE= 'blog';
+	const API_VERSION = '1.2';
+	const FORMAT = 'xml';
+	const SERVICE_TYPE = 'blog';
 	
 	private $api_key;
 	private $owner_url;
-	private $valid_actions= array( 'validate-key', 'audit-comment', 'announce-article', 'report-false-positives', 'report-false-negatives', 'get-stats' );
+	private $valid_actions = array( 'validate-key', 'audit-comment', 'announce-article', 'report-false-positives', 'report-false-negatives', 'get-stats' );
 	
 	public function __construct( $api_key, $owner_url )
 	{
-		$this->api_key= $api_key;
-		$this->owner_url= $owner_url;
+		$this->api_key = $api_key;
+		$this->owner_url = $owner_url;
 	}
 	
 	public function __call( $action, $args )
@@ -21,15 +21,15 @@ class DefensioAPI
 		if ( !$this->api_key ) {
 			throw new Exception( 'API Key Is Required' );
 		}
-		$action= str_replace( '_', '-', $action );
+		$action = str_replace( '_', '-', $action );
 		if ( !in_array( $action, $this->valid_actions ) ) {
 			throw new Exception( 'Invalid Action: ' . $action );
 		}
-		$params= $args ? $args[0] : array();
-		$params= $params instanceof DefensioParams ? $params : new DefensioParams( $params );
-		$params->owner_url= $this->owner_url;
+		$params = $args ? $args[0] : array();
+		$params = $params instanceof DefensioParams ? $params : new DefensioParams( $params );
+		$params->owner_url = $this->owner_url;
 		
-		$response= $this->call( $action, $params );
+		$response = $this->call( $action, $params );
 		if ( $response->status == 'fail' ) {
 			throw new Exception( $action . ' Failed: ' . $response->message );
 		}
@@ -38,13 +38,13 @@ class DefensioAPI
 	
 	private function call( $action, DefensioParams $params )
 	{
-		$client= new RemoteRequest( $this->build_url( $action ), 'POST' );
+		$client = new RemoteRequest( $this->build_url( $action ), 'POST' );
 		$client->set_body( $params->get_post_body() );
 		if ( $client->execute() ) {
 			if ( self::get_http_status( $client->get_response_headers() ) == '401' ) {
 				throw new Exception( 'Invalid/Unauthorized API Key' );
 			}
-			$response= new DefensioResponse( $client->get_response_body() );
+			$response = new DefensioResponse( $client->get_response_body() );
 			unset( $client );
 			return $response;
 		}
@@ -66,7 +66,7 @@ class DefensioAPI
 	
 	public static function get_http_status( $header )
 	{
-		$header= split( "\r\n", $header );
+		$header = split( "\r\n", $header );
 		foreach ( $header as $head ) {
 			if ( preg_match( "@HTTP/[\S]+ (\d+) [\S]+@", $head, $status ) ) {
 				return $status[1];
@@ -77,16 +77,16 @@ class DefensioAPI
 	
 	public static function validate_api_key( $key, $owner_url )
 	{
-		$defensio= new DefensioAPI( $key, $owner_url );
+		$defensio = new DefensioAPI( $key, $owner_url );
 		return $defensio->validate_key();
 	}
 }
 
 class DefensioParams
 {
-	private $post_data= array();
+	private $post_data = array();
 	
-	public function __construct( $params= array() )
+	public function __construct( $params = array() )
 	{
 		foreach( $params as $name => $value ) {
 			if ( $value ) {
@@ -97,7 +97,7 @@ class DefensioParams
 	
 	public function __set( $name, $value )
 	{
-		$name= str_replace( '_', '-', $name );
+		$name = str_replace( '_', '-', $name );
 		switch ( $name ) {
 			case 'signatures':
 				if ( is_array( $value ) ) {
@@ -115,7 +115,7 @@ class DefensioParams
 	
 	public function __get( $name )
 	{
-		$name= str_replace( '_', '-', $name );
+		$name = str_replace( '_', '-', $name );
 		if ( array_key_exists( $name, $this->post_data ) ) {
 			return $this->post_data[$name];
 		}
@@ -130,31 +130,31 @@ class DefensioParams
 
 class DefensioResponse
 {
-	private $nodes= array();
+	private $nodes = array();
 	
 	public function __construct( $xml )
 	{
 		try {
-			$xml= new SimpleXMLElement( $xml );
+			$xml = new SimpleXMLElement( $xml );
 		}
 		catch ( Exception $e ) {
 			throw new Exception( 'Bad Response From Server' );
 		}
 		foreach ( $xml as $element ) {
-			$node= new DefensioNode( $element );
+			$node = new DefensioNode( $element );
 			$this->nodes[$node->name]= $node;
 		}
 	}
 	
 	public function __set( $name, $value )
 	{
-		$name= str_replace( '_', '-', $name );
+		$name = str_replace( '_', '-', $name );
 		$this->nodes[$name]= $value;
 	}
 	
 	public function __get( $name )
 	{
-		$name= str_replace( '_', '-', $name );
+		$name = str_replace( '_', '-', $name );
 		if ( array_key_exists( $name, $this->nodes ) ) {
 			return $this->nodes[$name]->value;
 		}
@@ -170,15 +170,15 @@ class DefensioNode
 	
 	public function __construct( SimpleXMLElement $element )
 	{
-		$this->name= (string) $element->getName();
-		$atts= $element->attributes();
+		$this->name = (string) $element->getName();
+		$atts = $element->attributes();
 		if ( isset( $atts['type'] ) ) {
-			$this->type= (string) $atts['type'];
-			$this->value= $this->settype( $element, $this->type );
+			$this->type = (string) $atts['type'];
+			$this->value = $this->settype( $element, $this->type );
 		}
 		else {
-			$this->type= 'string';
-			$this->value= (string) $element;
+			$this->type = 'string';
+			$this->value = (string) $element;
 		}
 	}
 	
