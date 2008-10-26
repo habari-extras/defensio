@@ -256,17 +256,32 @@ class Defensio extends Plugin
 
 	public static function get_spaminess_style( $comment )
 	{
-		if ( isset($comment->info->defensio_spaminess) ) {
+		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam')) {
 			switch ( $comment->info->defensio_spaminess ) {
 				case $comment->info->defensio_spaminess > 0.6:
-					return 'background:#faa;';
+					return 'border-left-color:#F8595D; border-right-color:#F8595D;';
 				case $comment->info->defensio_spaminess > 0.3:
-					return 'background:#fca;';
+					return 'border-left-color:#FFADB0; border-right-color:#FFADB0;';
 				case $comment->info->defensio_spaminess > 0.1:
-					return 'background:#fea;';
+					return 'border-left-color:#FFD6D7; border-right-color:#FFD6D7;';
 			}
 		}
-		return 'background:#e2dbe3;';
+		return '';
+	}
+	
+	public function filter_comment_style( $style, $comment ) {
+		if($style != '') {
+			$style.= ' ';
+		}
+		$style.= self::get_spaminess_style($comment);
+		
+		return $style;
+	}
+	
+	public function action_comment_info( $comment ) {
+		if(isset($comment->info->defensio_spaminess)) {
+			echo '<p class="keyval spam"><span class="label">' . _t('Defensio Spaminess:', 'defensio') . '</span>' . '<strong>' . $comment->info->defensio_spaminess . '</strong></p>';
+		}
 	}
 
 	public static function sort_by_spaminess( $a, $b )
