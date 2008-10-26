@@ -113,18 +113,12 @@ class Defensio extends Plugin
 		$this->action_admin_theme_get_spam( $handler, $theme );
 	}
 
-	function filter_adminhandler_post_loadplugins_main_menu( $menu )
-	{
-		$menu['spam'] = array( 'url' => URL::get( 'admin', 'page=spam' ), 'title' => _t('Manage all spam in the spam vault','defensio'), 'text' => _t('Spam Vault','defensio'), 'hotkey' => 'S', 'selected' => false );
-		return $menu;
-	}
-
 	public function filter_dash_module_defensio( $module, $module_id, $theme )
 	{
 		$stats = $this->theme_defensio_stats();
 		// Show an error in the dashboard if Defensio returns a bad response.
 		if ( !$stats ) {
-			$module['title'] = '<a href="' . Site::get_url('admin') . '/spam">' . _t('Defensio') . '</a>';
+			$module['title'] = '<a href="' . URL::get( 'admin', 'page=comments' ) . '">' . _t('Defensio') . '</a>';
 			$module['content'] = '<ul class=items"><li class="item clear">' . _t('Bad Response From Server') . '</li></ul>';
 			return $module;
 		}
