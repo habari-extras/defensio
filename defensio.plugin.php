@@ -98,19 +98,6 @@ class Defensio extends Plugin
 	{
 		$this->defensio = new DefensioAPI( Options::get( 'defensio__api_key' ), Site::get_url( 'habari' ) );
 		$this->load_text_domain( 'defensio' );
-		$this->add_template( 'defensio', dirname(__FILE__) . '/moderate.php' );
-	}
-
-	function action_admin_theme_get_spam( $handler, $theme )
-	{
-		$handler->fetch_comments( array( 'status' => 2, 'limit' => 60 ) );
-		$theme->display( 'defensio' );
-		exit;
-	}
-
-	function action_admin_theme_post_spam( $handler, $theme )
-	{
-		$this->action_admin_theme_get_spam( $handler, $theme );
 	}
 
 	public function filter_dash_module_defensio( $module, $module_id, $theme )
@@ -168,9 +155,9 @@ class Defensio extends Plugin
 			'referrer' => isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null,
 		);
 		if ( $user instanceof User ) {
-			$params['user-logged-in'] = $user instanceof User;
-			// test for administrator, editor, etc. as well
-			$params['trusted-user'] = $user instanceof User;
+			$params['user-logged-in'] = $user->loggedin;
+			// @todo test for administrator, editor, etc. as well
+			$params['trusted-user'] = $user->loggedin;
 			if ( $user->info->openid_url ) {
 				$params['openid'] = $user->info->openid_url;
 			}
