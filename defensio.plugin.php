@@ -145,9 +145,9 @@ class Defensio extends Plugin
 		$user = User::identify();
 		$params = array(
 			'user-ip' => long2ip( $comment->ip ),
-			'article-date' => date( 'Y/m/d', strtotime( $comment->post->pubdate ) ),
+			'article-date' => $comment->post->pubdate->format( 'Y/m/d' ),
 			'comment-author' => $comment->name,
-			'comment-type' => strtolower( Comment::type_name( $comment->type ) ),
+			'comment-type' => strtolower( $comment->typename ),
 			'comment-content' => $comment->content_out,
 			'comment-author-email' => $comment->email ? $comment->email : null,
 			'comment-author-url' => $comment->url ? $comment->url : null,
