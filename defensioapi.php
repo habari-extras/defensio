@@ -39,7 +39,7 @@ class DefensioAPI
 	private function call( $action, DefensioParams $params )
 	{
 		$client = new RemoteRequest( $this->build_url( $action ), 'POST' );
-		$client->set_body( $params->get_post_body() );
+		$client->set_postdata( $params->get_post_data() );
 		if ( $client->execute() ) {
 			if ( self::get_http_status( $client->get_response_headers() ) == '401' ) {
 				throw new Exception( 'Invalid/Unauthorized API Key' );
@@ -125,6 +125,11 @@ class DefensioParams
 	public function get_post_body()
 	{
 		return http_build_query( $this->post_data, '', '&' );
+	}
+
+	public function get_post_data()
+	{
+		return $this->post_data;
 	}
 }
 

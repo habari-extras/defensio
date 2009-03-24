@@ -13,7 +13,7 @@ class Defensio extends Plugin
 			'author' => 'Habari Community',
 			'description' => 'Provides the Defensio spam filter webservice to Habari comments.',
 			'url' => 'http://habariproject.org',
-			'version' => '0.4',
+			'version' => '0.5',
 			'license' => 'Apache License 2.0'
 			);
 	}
