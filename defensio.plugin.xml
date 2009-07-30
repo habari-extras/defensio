@@ -1,9 +1,10 @@
-<plugin>
+<?xml version="1.0" encoding="utf-8" ?>
+<pluggable type="plugin">
 	<name>Defensio</name>
-	<author>Habari Community</author>
-	<description>Provides the Defensio spam filter webservice to Habari comments.</description>
-	<url>http://habariproject.org</url>
+	<license url="http://www.apache.org/licenses/LICENSE-2.0.html">Apache Software License 2.0</license>
+	<author url="http://habariproject.org">Habari Community</author>
 	<version>0.4</version>
-	<license>Apache License 2.0</license>
-</plugin>
-
+	<url>http://habariproject.org</url>
+	<description><![CDATA[Provides the Defensio spam filter webservice to Habari comments.]]></description>
+	<copyright>2009</copyright>
+</pluggable>
