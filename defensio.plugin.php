@@ -178,7 +178,7 @@ class Defensio extends Plugin
 			);
 			$comment->status =  self::COMMENT_STATUS_QUEUED;
 			$comment->info->spamcheck = array( _t('Queued for Defensio scan.', 'defensio') );
-			CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time()+600, _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
+			CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time(), _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
 		}
 	}
 	
