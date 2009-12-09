@@ -4,6 +4,8 @@ require_once "defensioapi.php";
 
 class Defensio extends Plugin
 {
+	const MAX_RETRIES = 3;
+	
 	private $defensio;
 
 	public function set_priorities()
@@ -151,17 +153,23 @@ class Defensio extends Plugin
 			}
 		}
 
-		try {
-			$result = $this->defensio->audit_comment( $params );
-			if ( $result->spam == true ) {
-				$comment->status = 'spam';
-				$comment->info->spamcheck = array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
+		for($i = 0; $i < self::MAX_RETRIES; $i++) {
+			try {
+				$result = $this->defensio->audit_comment( $params );
+				if ( $result->spam == true ) {
+					$comment->status = 'spam';
+					$comment->info->spamcheck = array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
+				}
+				$comment->info->defensio_signature = $result->signature;
+				$comment->info->defensio_spaminess = $result->spaminess;
+				$i = self::MAX_RETRIES;
 			}
-			$comment->info->defensio_signature = $result->signature;
-			$comment->info->defensio_spaminess = $result->spaminess;
-		}
-		catch ( Exception $e ) {
-			EventLog::log( $e->getMessage(), 'notice', 'comment', 'Defensio' );
+			catch ( Exception $e ) {
+				EventLog::log(
+					_t('Defensio scanning attempt %d for comment %d failed: %s', array($i, $comment->id, $e->getMessage()), 'defensio'),
+					'notice', 'comment', 'Defensio'
+				);
+			}
 		}
 	}
 
