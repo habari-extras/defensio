@@ -4,7 +4,8 @@ require_once "defensioapi.php";
 
 class Defensio extends Plugin
 {
-	const MAX_RETRIES = 3;
+	const MAX_RETRIES = 5;
+	const COMMENT_STATUS_QUEUED = 9;
 	
 	private $defensio;
 
@@ -129,8 +130,8 @@ class Defensio extends Plugin
 
 		return $stats;
 	}
-
-	public function action_comment_insert_before( $comment )
+	
+	private function audit_comment( Comment $comment )
 	{
 		$user = User::identify();
 		$params = array(
@@ -153,24 +154,72 @@ class Defensio extends Plugin
 			}
 		}
 
-		for($i = 0; $i < self::MAX_RETRIES; $i++) {
-			try {
-				$result = $this->defensio->audit_comment( $params );
-				if ( $result->spam == true ) {
-					$comment->status = 'spam';
-					$comment->info->spamcheck = array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
+		$result = $this->defensio->audit_comment( $params );
+		if ( $result->spam == true ) {
+			$comment->status = 'spam';
+			$comment->info->spamcheck = array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
+		}
+		else {
+			$comment->status = 'unapproved';
+		}
+		$comment->info->defensio_signature = $result->signature;
+		$comment->info->defensio_spaminess = $result->spaminess;
+	}
+
+	public function action_comment_insert_before( $comment )
+	{
+		try {
+			$this->audit_comment( $comment );
+		}
+		catch ( Exception $e ) {
+			EventLog::log(
+				_t('Defensio scanning for comment %s failed, adding to queue', array($comment->ip), 'defensio'),
+				'notice', 'comment', 'Defensio'
+			);
+			$comment->status =  self::COMMENT_STATUS_QUEUED;
+			$comment->info->spamcheck = array( _t('Queued for Defensio scan.', 'defensio') );
+			CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time()+600, _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
+		}
+	}
+	
+	public function filter_defensio_queue($result = true)
+	{
+		$comments = Comments::get( array('status' => self::COMMENT_STATUS_QUEUED) );
+		
+		if ( count($comments) > 0 ) {
+			foreach( $comments as $comment ) {
+				$scanned = false;
+				// try to scan for MAX_RETRIES
+				for($i = 0; $i < self::MAX_RETRIES; $i++) {
+					try {
+						$this->audit_comment( $comment );
+						$i = self::MAX_RETRIES;
+						$scanned = true; // success!
+						$comment->update();
+						EventLog::log(
+							_t('Defensio scanning attempt %d for comment %s succeded', array($i+1, $comment->ip), 'defensio'),
+							'notice', 'comment', 'Defensio'
+						);
+					}
+					catch ( Exception $e ) {
+						EventLog::log(
+							_t('Defensio scanning attempt %d for comment %s failed', array($i+1, $comment->ip), 'defensio'),
+							'notice', 'comment', 'Defensio'
+						);
+					}
 				}
-				$comment->info->defensio_signature = $result->signature;
-				$comment->info->defensio_spaminess = $result->spaminess;
-				$i = self::MAX_RETRIES;
-			}
-			catch ( Exception $e ) {
-				EventLog::log(
-					_t('Defensio scanning attempt %d for comment %d failed: %s', array($i, $comment->id, $e->getMessage()), 'defensio'),
-					'notice', 'comment', 'Defensio'
-				);
+				// see if we finally got it scanned. if not make unapproved.
+				if ( $scanned == false ) {
+					EventLog::log(
+						_t('Defensio scanning failed for comment %s. Could not connect to server.', array($comment->ip), 'defensio'),
+						'notice', 'comment', 'Defensio'
+					);
+					$comment->status = 'unapproved';
+					$comment->update();
+				}
 			}
 		}
+		return true;
 	}
 
 	public function action_admin_moderate_comments( $action, $comments, $handler )
@@ -230,6 +279,18 @@ class Defensio extends Plugin
 			}
 		}
 	}
+	
+	public function filter_list_comment_statuses( array $comment_status_list )
+	{
+		$comment_status_list[self::COMMENT_STATUS_QUEUED] = 'defensio queue';
+		return $comment_status_list;
+	}
+	
+	public function filter_list_comment_actions( array $comment_status_actions )
+	{
+		$comment_status_actions[self::COMMENT_STATUS_QUEUED] = _t( 'Queue Defensio', 'defensio' );
+		return $comment_status_actions;
+	}
 
 	public static function get_spaminess_style( $comment )
 	{
@@ -243,6 +304,9 @@ class Defensio extends Plugin
 					return 'border-left-color:#FFD6D7; border-right-color:#FFD6D7;';
 			}
 		}
+		elseif ( $comment->status == self::COMMENT_STATUS_QUEUED ) {
+			return 'border-left: 3px solid #BCCFFF; border-right: 3px solid #BCCFFF;';
+		}
 		return '';
 	}
 	
@@ -251,7 +315,6 @@ class Defensio extends Plugin
 			$style.= ' ';
 		}
 		$style.= self::get_spaminess_style($comment);
-		
 		return $style;
 	}
 	
