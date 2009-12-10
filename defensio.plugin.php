@@ -306,7 +306,7 @@ class Defensio extends Plugin
 						$grad_hex,
 						ColorUtils::hex_rgb($start_hex),
 						ColorUtils::hex_rgb($end_hex),
-						array_pad(array(), 3, $percent)
+						array_pad(array(), 3, $comment->info->defensio_spaminess)
 					)
 				)
 			);
