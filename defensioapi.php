@@ -55,7 +55,7 @@ class DefensioAPI
 	
 	private function build_url( $action )
 	{
-		return sprintf( 'http://apisdf.defensio.com/%1$s/%2$s/%3$s/%4$s.%5$s',
+		return sprintf( 'http://api.defensio.com/%1$s/%2$s/%3$s/%4$s.%5$s',
 			self::SERVICE_TYPE,
 			self::API_VERSION,
 			$action,
