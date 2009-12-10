@@ -292,18 +292,25 @@ class Defensio extends Plugin
 		$comment_status_actions[self::COMMENT_STATUS_QUEUED] = _t( 'Queue Defensio', 'defensio' );
 		return $comment_status_actions;
 	}
-
+	
 	public static function get_spaminess_style( $comment )
 	{
 		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam')) {
-			switch ( $comment->info->defensio_spaminess ) {
-				case $comment->info->defensio_spaminess > 0.6:
-					return 'border-left-color:#F8595D; border-right-color:#F8595D;';
-				case $comment->info->defensio_spaminess > 0.3:
-					return 'border-left-color:#FFADB0; border-right-color:#FFADB0;';
-				case $comment->info->defensio_spaminess > 0.1:
-					return 'border-left-color:#FFD6D7; border-right-color:#FFD6D7;';
-			}
+			$grad_hex = create_function( '$s,$e,$i', 'return (($e-$s)*$i)+$s;' );
+			$start_hex = '#FFD6D7';
+			$end_hex = '';
+			$border = ColorUtils::rgb_hex(
+				array_combine(
+					array('r','g','b'),
+					array_map(
+						$grad_hex,
+						ColorUtils::hex_rgb($start_hex),
+						ColorUtils::hex_rgb($end_hex),
+						array_pad(array(), 3, $percent)
+					)
+				)
+			);
+			return "border-left-color:#$border; border-right-color:#$border;";
 		}
 		elseif ( $comment->status == self::COMMENT_STATUS_QUEUED ) {
 			return 'border-left: 3px solid #BCCFFF; border-right: 3px solid #BCCFFF;';
