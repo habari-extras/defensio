@@ -298,7 +298,7 @@ class Defensio extends Plugin
 		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam')) {
 			$grad_hex = create_function( '$s,$e,$i', 'return (($e-$s)*$i)+$s;' );
 			$start_hex = '#FFD6D7';
-			$end_hex = '';
+			$end_hex = '#F8595D';
 			$border = ColorUtils::rgb_hex(
 				array_combine(
 					array('r','g','b'),
