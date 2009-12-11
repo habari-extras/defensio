@@ -96,8 +96,8 @@ class Defensio extends Plugin
 		$stats = $this->theme_defensio_stats();
 		// Show an error in the dashboard if Defensio returns a bad response.
 		if ( !$stats ) {
-			$module['title'] = '<a href="' . URL::get( 'admin', 'page=comments' ) . '">' . _t('Defensio') . '</a>';
-			$module['content'] = '<ul class=items"><li class="item clear">' . _t('Bad Response From Server') . '</li></ul>';
+			$module['title'] = '<a href="' . URL::get( 'admin', 'page=comments' ) . '">' . _t('Defensio', 'defensio') . '</a>';
+			$module['content'] = '<ul class=items"><li class="item clear">' . _t('Bad Response From Server', 'defensio') . '</li></ul>';
 			return $module;
 		}
 
@@ -107,7 +107,7 @@ class Defensio extends Plugin
 		$theme->false_negatives = $stats->false_negatives;
 		$theme->false_positives = $stats->false_positives;
 
-		$module['title'] = '<a href="' . Site::get_url('admin') . '/spam">' . _t('Defensio') . '</a>';
+		$module['title'] = '<a href="' . Site::get_url('admin') . '/spam">' . _t('Defensio', 'defensio') . '</a>';
 		$module['content'] = $theme->fetch( 'dash_defensio' );
 		return $module;
 	}
@@ -287,12 +287,6 @@ class Defensio extends Plugin
 		return $comment_status_list;
 	}
 	
-	public function filter_list_comment_actions( array $comment_status_actions )
-	{
-		$comment_status_actions[self::COMMENT_STATUS_QUEUED] = _t( 'Queue Defensio', 'defensio' );
-		return $comment_status_actions;
-	}
-	
 	public static function get_spaminess_style( $comment )
 	{
 		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam')) {
@@ -330,6 +324,17 @@ class Defensio extends Plugin
 		if(isset($comment->info->defensio_spaminess)) {
 			echo '<p class="keyval spam"><span class="label">' . _t('Defensio Spaminess:', 'defensio') . '</span>' . '<strong>' . ($comment->info->defensio_spaminess*100) . '%</strong></p>';
 		}
+	}
+	
+	/**
+	 * Sort by spaminess when the status:spam filter is set
+	 */
+	public function filter_comments_actions( $actions, &$comments )
+	{
+		if ( preg_match( '/status:\s*spam/i', Controller::get_handler()->handler_vars['search'] ) ) {
+			usort( $comments, 'Defensio::sort_by_spaminess' );
+		}
+		return $actions;
 	}
 
 	public static function sort_by_spaminess( $a, $b )
