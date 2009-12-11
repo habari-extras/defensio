@@ -331,7 +331,8 @@ class Defensio extends Plugin
 	 */
 	public function filter_comments_actions( $actions, &$comments )
 	{
-		if ( preg_match( '/status:\s*spam/i', Controller::get_handler()->handler_vars['search'] ) ) {
+		if ( preg_match( '/status:\s*spam/i', Controller::get_handler()->handler_vars['search'] )
+			|| Controller::get_handler()->handler_vars['status'] == 'spam' ) {
 			usort( $comments, 'Defensio::sort_by_spaminess' );
 		}
 		return $actions;
