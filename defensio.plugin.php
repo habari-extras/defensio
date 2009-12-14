@@ -16,21 +16,17 @@ class Defensio extends Plugin
 		);
 	}
 
-	public function action_plugin_activation( $file )
+	public function action_plugin_activation()
 	{
-		if ( realpath( $file ) == __FILE__ ) {
-			Modules::add( 'Defensio' );
-			Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
-			Options::set( 'defensio__api_key', '' );
-			Options::set( 'defensio__announce_posts', 'yes' );
-		}
+		Modules::add( 'Defensio' );
+		Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
+		Options::set( 'defensio__api_key', '' );
+		Options::set( 'defensio__announce_posts', 'yes' );
 	}
 
-	public function action_plugin_deactivation( $file )
+	public function action_plugin_deactivation()
 	{
-		if ( realpath( $file ) == __FILE__ ) {
-			Modules::remove_by_name( 'Defensio' );
-		}
+		Modules::remove_by_name( 'Defensio' );
 	}
 
 	public function filter_dash_modules( $modules )
@@ -332,7 +328,7 @@ class Defensio extends Plugin
 	public function filter_comments_actions( $actions, &$comments )
 	{
 		if ( preg_match( '/status:\s*spam/i', Controller::get_handler()->handler_vars['search'] )
-			|| Controller::get_handler()->handler_vars['status'] == 'spam' ) {
+			|| Comment::status(Controller::get_handler()->handler_vars['status']) == Comment::status('spam') ) {
 			usort( $comments, 'Defensio::sort_by_spaminess' );
 		}
 		return $actions;
