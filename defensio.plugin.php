@@ -197,11 +197,11 @@ class Defensio extends Plugin
 		
 		if ( count($comments) > 0 ) {
 			$try_again = FALSE;
-			// have we tried yet?
-			if ( !$comment->info->defensio_retries ) {
-				$comment->info->defensio_retries = 1;
-			}
 			foreach( $comments as $comment ) {
+				// Have we tried yet
+				if ( !$comment->info->defensio_retries ) {
+					 $comment->info->defensio_retries = 1;
+				}
 				try {
 					$this->audit_comment( $comment );
 					$comment->update();
@@ -226,6 +226,7 @@ class Defensio extends Plugin
 						);
 						// increment retries and set try_again
 						$comment->info->defensio_retries = $comment->info->defensio_retries + 1;
+						$comment->update();
 						$try_again = TRUE;
 					}
 				}
