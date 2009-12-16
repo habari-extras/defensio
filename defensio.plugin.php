@@ -174,46 +174,65 @@ class Defensio extends Plugin
 			);
 			$comment->status =  self::COMMENT_STATUS_QUEUED;
 			$comment->info->spamcheck = array( _t('Queued for Defensio scan.', 'defensio') );
-			CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time(), _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
+			// this could cause multiple crons without checking if there, but that's ok, it'll avoid races.
+			$this->_add_cron();
 			Session::notice( _t('Your comment is being scanned for spam.', 'defensio') );
 		}
 	}
 	
+	/**
+	 * I should really comment all these functions. --matt
+	 */
+	protected function _add_cron( $time = 0 )
+	{
+		CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time(), _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
+	}
+	
+	/**
+	 * try to scan for MAX_RETRIES
+	 */
 	public function filter_defensio_queue($result = true)
 	{
 		$comments = Comments::get( array('status' => self::COMMENT_STATUS_QUEUED) );
 		
 		if ( count($comments) > 0 ) {
+			$try_again = FALSE;
+			// have we tried yet?
+			if ( !$comment->info->defensio_retries ) {
+				$comment->info->defensio_retries = 1;
+			}
 			foreach( $comments as $comment ) {
-				$scanned = false;
-				// try to scan for MAX_RETRIES
-				for($i = 0; $i < self::MAX_RETRIES; $i++) {
-					try {
-						$this->audit_comment( $comment );
-						$i = self::MAX_RETRIES;
-						$scanned = true; // success!
-						$comment->update();
-						EventLog::log(
-							_t('Defensio scanning attempt %d for comment %s succeded', array($i+1, $comment->ip), 'defensio'),
-							'notice', 'comment', 'Defensio'
-						);
-					}
-					catch ( Exception $e ) {
-						EventLog::log(
-							_t('Defensio scanning attempt %d for comment %s failed', array($i+1, $comment->ip), 'defensio'),
-							'notice', 'comment', 'Defensio'
-						);
-					}
-				}
-				// see if we finally got it scanned. if not make unapproved.
-				if ( $scanned == false ) {
+				try {
+					$this->audit_comment( $comment );
+					$comment->update();
 					EventLog::log(
-						_t('Defensio scanning failed for comment %s. Could not connect to server.', array($comment->ip), 'defensio'),
+						_t('Defensio scanning, retry %d, for comment %s succeded', array($comment->info->defensio_retries, $comment->ip), 'defensio'),
 						'notice', 'comment', 'Defensio'
 					);
-					$comment->status = 'unapproved';
-					$comment->update();
 				}
+				catch ( Exception $e ) {
+					if ( $comment->info->defensio_retries == self::MAX_RETRIES ) {
+						EventLog::log(
+							_t('Defensio scanning failed for comment %s. Could not connect to server. Marking unapproved.', array($comment->ip), 'defensio'),
+							'notice', 'comment', 'Defensio'
+						);
+						$comment->status = 'unapproved';
+						$comment->update();
+					}
+					else {
+						EventLog::log(
+							_t('Defensio scanning, retry %d, for comment %s failed', array($comment->info->defensio_retries, $comment->ip), 'defensio'),
+							'notice', 'comment', 'Defensio'
+						);
+						// increment retries and set try_again
+						$comment->info->defensio_retries = $comment->info->defensio_retries + 1;
+						$try_again = TRUE;
+					}
+				}
+			}
+			// try again in 30 seconds if not scanned yet
+			if ( $try_again ) {
+				$this->_add_cron(30);
 			}
 		}
 		return true;
