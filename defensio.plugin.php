@@ -281,11 +281,29 @@ class Defensio extends Plugin
 		try {
 			if ( $false_positives ) {
 				$this->defensio->report_false_positives( array( 'signatures' => $false_positives ) );
-				Session::notice( sprintf( _t('Reported %d false positives to Defensio', 'defensio'), count($false_positives) ) );
+				$count = count($false_positives);
+				Session::notice(sprintf(
+					_n(
+						'Reported %d false positive to Defensio',
+						'Reported %d false positives to Defensio',
+						$count,
+						'defensio'
+					),
+					$count
+				));
 			}
 			if ( $false_negatives ) {
 				$this->defensio->report_false_negatives( array( 'signatures' => $false_negatives ) );
-				Session::notice( sprintf( _t('Reported %d false negatives to Defensio', 'defensio'), count($false_negatives) ) );
+				$count = count($false_negatives);
+				Session::notice(sprintf(
+					_n(
+						'Reported %d false negative to Defensio',
+						'Reported %d false negatives to Defensio',
+						$count,
+						'defensio'
+					),
+					$count
+				));
 			}
 		}
 		catch ( Exception $e ) {
