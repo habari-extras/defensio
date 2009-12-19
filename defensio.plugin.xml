@@ -5,6 +5,36 @@
 	<author url="http://habariproject.org">Habari Community</author>
 	<version>0.4</version>
 	<url>http://habariproject.org</url>
+	
 	<description><![CDATA[Provides the Defensio spam filter webservice to Habari comments.]]></description>
+	
+	<help>
+		<value><![CDATA[
+		<p>You will need an <a href="http://defensio.com/signup">API key from defensio</a> for the
+		filter to work. Enter the API key Defensio gives you in the Configuration.</p>
+		
+		<p>You can also choose to announce new blog posts you make to Defensio to help Defensio
+		determine what is and what is not spam. The information sent to Defensio is as follows:</p>
+		
+		<ul>
+			<li>Author Name: The username of the posts author.</li>
+			<li>Author Email: The email address of the posts author.</li>
+			<li>Article Title: The title you give your post.</li>
+			<li>Article Content: The content of your post.</li>
+			<li>Permalink: The URI to the post.</li>
+		</ul>
+		
+		<p>You can also choose weather or not to automatically approve comments that Defensio does
+		not think are spam. This means comments not marked as spam will show up immediately on your
+		site.</p>
+		
+		<p>This plugin also uses a queue system to queue comments to be scanned in case the Defensio
+		servers go down. The plugin will retry the scan every 30 seconds for a total of 6 times. 
+		Theses queued comments will show in the comments admin page marked in blue. If the Defensio
+		servers do infact fail to respond within the 6 retries, the comment will be marked 
+		unapproved and show in your moderation queue for you to decide.</p>
+		]]></value>
+	</help>
+	
 	<copyright>2009</copyright>
 </pluggable>

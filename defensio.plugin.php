@@ -4,7 +4,8 @@ require_once "defensioapi.php";
 
 class Defensio extends Plugin
 {
-	const MAX_RETRIES = 5;
+	const MAX_RETRIES = 6;
+	const RETRY_INTERVAL = 30;
 	const COMMENT_STATUS_QUEUED = 9;
 	
 	private $defensio;
@@ -56,12 +57,13 @@ class Defensio extends Plugin
 					$api_key = $ui->append( 'text', 'api_key', 'option:defensio__api_key', _t('Defensio API Key: ', 'defensio') );
 					$api_key->add_validator( 'validate_required' );
 					$api_key->add_validator( array( $this, 'validate_api_key' ) );
-
+					
+					// using yes/no is not ideal but it's what we got :(
 					$announce_posts = $ui->append( 'select', 'announce_posts', 'option:defensio__announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
 					$announce_posts->options = array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
 					$announce_posts->add_validator( 'validate_required' );
 					
-					$auto_approve = $ui->append( 'select', 'auto_approve', 'option:defensio__auto_approve', _t('Automatically approve non-spam Comments: ', 'defensio') );
+					$auto_approve = $ui->append( 'select', 'auto_approve', 'option:defensio__auto_approve', _t('Automatically Approve Non-Spam Comments: ', 'defensio') );
 					$auto_approve->options = array( 'no' => _t('No', 'defensio'), 'yes' => _t('Yes', 'defensio') );
 					$auto_approve->add_validator( 'validate_required' );
 
@@ -112,7 +114,10 @@ class Defensio extends Plugin
 		$module['content'] = $theme->fetch( 'dash_defensio' );
 		return $module;
 	}
-
+	
+	/**
+	 * @todo use cron to get stats, and "keep cache" system
+	 */
 	public function theme_defensio_stats()
 	{
 		if ( Cache::has( 'defensio_stats' ) ) {
@@ -161,7 +166,13 @@ class Defensio extends Plugin
 			$comment->info->spamcheck = array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
 		}
 		else {
-			$comment->status = 'unapproved';
+			// it's not spam so if auto_approve is set, approve it
+			if ( Options::get('defensio__auto_approve') == 'yes' ) {
+				$comment->status = 'approved';
+			}
+			else {
+				$comment->status = 'unapproved';
+			}
 		}
 		$comment->info->defensio_signature = $result->signature;
 		$comment->info->defensio_spaminess = $result->spaminess;
@@ -171,10 +182,6 @@ class Defensio extends Plugin
 	{
 		try {
 			$this->audit_comment( $comment );
-			// it passed, so if it's not spam and auto_approve is set, approve it
-			if ( $comment->statusname == 'unapproved' && Options::get('defensio__auto_approve') == 'yes' ) {
-				$comment->status = 'approved';
-			}
 		}
 		catch ( Exception $e ) {
 			EventLog::log(
@@ -240,9 +247,9 @@ class Defensio extends Plugin
 					}
 				}
 			}
-			// try again in 30 seconds if not scanned yet
+			// try again in RETRY_INTERVAL seconds if not scanned yet
 			if ( $try_again ) {
-				$this->_add_cron(30);
+				$this->_add_cron(self::RETRY_INTERVAL);
 			}
 		}
 		return true;
