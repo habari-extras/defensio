@@ -22,6 +22,7 @@ class Defensio extends Plugin
 		Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
 		Options::set( 'defensio__api_key', '' );
 		Options::set( 'defensio__announce_posts', 'yes' );
+		Options::set( 'defensio__auto_approve', 'no' );
 	}
 
 	public function action_plugin_deactivation()
@@ -59,6 +60,10 @@ class Defensio extends Plugin
 					$announce_posts = $ui->append( 'select', 'announce_posts', 'option:defensio__announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
 					$announce_posts->options = array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
 					$announce_posts->add_validator( 'validate_required' );
+					
+					$auto_approve = $ui->append( 'select', 'auto_approve', 'option:defensio__auto_approve', _t('Automatically approve non-spam Comments: ', 'defensio') );
+					$auto_approve->options = array( 'no' => _t('No', 'defensio'), 'yes' => _t('Yes', 'defensio') );
+					$auto_approve->add_validator( 'validate_required' );
 
 					$register = $ui->append( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
 
@@ -166,6 +171,10 @@ class Defensio extends Plugin
 	{
 		try {
 			$this->audit_comment( $comment );
+			// it passed, so if it's not spam and auto_approve is set, approve it
+			if ( $comment->statusname == 'unapproved' && Options::get('defensio__auto_approve') == 'yes' ) {
+				$comment->status = 'approved';
+			}
 		}
 		catch ( Exception $e ) {
 			EventLog::log(
