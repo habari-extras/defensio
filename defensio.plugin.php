@@ -110,7 +110,7 @@ class Defensio extends Plugin
 		$theme->false_negatives = $stats->false_negatives;
 		$theme->false_positives = $stats->false_positives;
 
-		$module['title'] = '<a href="' . Site::get_url('admin') . '/spam">' . _t('Defensio', 'defensio') . '</a>';
+		$module['title'] = '<a href="' . htmlspecialchars( URL::get( 'admin', array( 'page' => 'comments', 'status' => Comment::STATUS_SPAM ) ), ENT_COMPAT, 'UTF-8' ) . '">'. _t('Defensio', 'defensio') . '</a>';
 		$module['content'] = $theme->fetch( 'dash_defensio' );
 		return $module;
 	}
