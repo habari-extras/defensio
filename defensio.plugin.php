@@ -4,7 +4,7 @@ require_once "defensioapi.php";
 
 class Defensio extends Plugin
 {
-	const MAX_RETRIES = 6;
+	const MAX_RETRIES = 10;
 	const RETRY_INTERVAL = 30;
 	const COMMENT_STATUS_QUEUED = 9;
 	
@@ -201,7 +201,7 @@ class Defensio extends Plugin
 	 */
 	protected function _add_cron( $time = 0 )
 	{
-		CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time(), _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
+		CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time() + $time, _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
 	}
 	
 	/**
