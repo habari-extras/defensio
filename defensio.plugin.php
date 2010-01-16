@@ -1,15 +1,48 @@
 <?php
 
-require_once "defensioapi.php";
-
+/**
+ * @package Defensio
+ */
 class Defensio extends Plugin
 {
+	/**
+	 * Use this constant to put Defensio comment auditing into testing mode. You can force it to
+	 * return spam or ham and the spaminess value (in the range 0 to 1)
+	 * @example "spam,0.5668" or "ham,0.3669"
+	 */
+	const TEST_FORCE = FALSE;
+
 	const MAX_RETRIES = 10;
 	const RETRY_INTERVAL = 30;
 	const COMMENT_STATUS_QUEUED = 9;
-	
+
+	const OPTION_API_KEY = 'defensio__api_key';
+	const OPTION_FLAG_SPAMINESS = 'defensio__api_key';
+	const OPTION_ANNOUNCE_POSTS = 'defensio__announce_posts';
+	const OPTION_AUTO_APPROVE = 'defensio__auto_approve';
+
 	private $defensio;
 
+	/**
+	 * spl_autoload implementation to load the DefensioAPI
+	 * @param string $class the classname to load
+	 */
+	public static function autoload( $class )
+	{
+		static $classes = array( 'defensioapi', 'defensionode', 'defensioparams', 'defensioresponse' );
+		static $loaded = FALSE;
+		
+		if ( !$loaded && in_array( strtolower($class), $classes ) !== FALSE ) {
+			require "defensioapi.php";
+			$loaded = true;
+		}
+	}
+
+	/**
+	 * Set the priority of 'action_comment_insert_before' to 1, so we are close to first to run
+	 * before Comment insertion.
+	 * @return array The customized priority
+	 */
 	public function set_priorities()
 	{
 		return array(
@@ -17,20 +50,121 @@ class Defensio extends Plugin
 		);
 	}
 
+	/**
+	 * Setup defaults on activation. Don't overwrite API key if it's already there.
+	 */
 	public function action_plugin_activation()
 	{
 		Modules::add( 'Defensio' );
 		Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
-		Options::set( 'defensio__api_key', '' );
-		Options::set( 'defensio__announce_posts', 'yes' );
-		Options::set( 'defensio__auto_approve', 'no' );
+		if ( !Options::get(self::OPTION_API_KEY) ) {
+			Options::set( self::OPTION_API_KEY, '' );
+		}
+		Options::set(self::OPTION_FLAG_SPAMINESS, 50);
+		Options::set(self::OPTION_ANNOUNCE_POSTS, 'yes');
+		Options::set(self::OPTION_AUTO_APPROVE, 'no');
 	}
 
+	/**
+	 * Remove the dashboard module on deactivation.
+	 */
 	public function action_plugin_deactivation()
 	{
 		Modules::remove_by_name( 'Defensio' );
 	}
 
+	/**
+	 * Implement the simple plugin configuration.
+	 * @return FormUI The configuration form
+	 */
+	public function configure()
+	{
+		$ui = new FormUI( 'defensio' );
+
+		// Add a text control for the address you want the email sent to
+		$api_key = $ui->append(
+				'text',
+				'api_key',
+				'option:' . self::OPTION_API_KEY,
+				_t('Defensio API Key: ', 'defensio')
+			);
+		$api_key->add_validator( 'validate_required' );
+		$api_key->add_validator( array( $this, 'validate_api_key' ) );
+
+		// min spamines flag
+		$spaminess = $ui->append(
+				'select',
+				'announce_posts',
+				'option:' . self::OPTION_FLAG_SPAMINESS,
+				_t('Minimum Spaminess to Flag as Spam (%): ', 'defensio')
+			);
+		$spaminess->options = range(1, 100, 5);
+		$spaminess->add_validator( 'validate_required' );
+
+		// using yes/no is not ideal but it's what we got :(
+		$announce_posts = $ui->append(
+				'select',
+				'announce_posts',
+				'option:' . self::OPTION_ANNOUNCE_POSTS,
+				_t('Announce New Posts To Defensio: ', 'defensio')
+			);
+		$announce_posts->options = array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
+		$announce_posts->add_validator( 'validate_required' );
+
+		$auto_approve = $ui->append( 'select',
+				'auto_approve',
+				'option:' . self::OPTION_AUTO_APPROVE,
+				_t('Automatically Approve Non-Spam Comments: ', 'defensio')
+			);
+		$auto_approve->options = array( 'no' => _t('No', 'defensio'), 'yes' => _t('Yes', 'defensio') );
+		$auto_approve->add_validator( 'validate_required' );
+
+		$register = $ui->append(
+				'static',
+				'register',
+				'<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>'
+			);
+
+		$ui->append( 'submit', 'save', _t( 'Save', 'defensio' ) );
+		$ui->set_option( 'success_message', _t( 'Configuration saved', 'defensio' ) );
+		return $ui;
+	}
+
+	/**
+	 * FormUI validator to validate the entered API key with Defensio.
+	 * @param string $key The API key to validate.
+	 * @return array The error message if validation failed, or blank array if successful.
+	 */
+	public function validate_api_key( $key )
+	{
+		try {
+			DefensioAPI::validate_api_key( $key, Site::get_url( 'habari' ) );
+		}
+		catch ( Exception $e ) {
+			return array(
+				_t('Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the key is entered correctly and is <b>registered for this site (%s)</b>.',
+				array( $key, Site::get_url( 'habari' ) ),
+				'defensio')
+			);
+		}
+		return array();
+	}
+
+	/**
+	 * Setup the DefensioAPI on Habari initialization.
+	 * @todo move text domain loading to only admin.
+	 */
+	public function action_init()
+	{
+		$this->defensio = new DefensioAPI( Options::get( self::OPTION_API_KEY ), Site::get_url( 'habari' ) );
+		$this->load_text_domain( 'defensio' );
+	}
+
+	/**
+	 * Add the dashboard module to the list
+	 * @param array $modules The dashboard modules available
+	 * @return array Modified list of dashboard modules with ours added
+	 */
 	public function filter_dash_modules( $modules )
 	{
 		$modules[] = 'Defensio';
@@ -38,63 +172,14 @@ class Defensio extends Plugin
 		return $modules;
 	}
 
-	public function filter_plugin_config( $actions, $plugin_id )
-	{
-		if ( $plugin_id == $this->plugin_id() ) {
-			$actions[] = _t('Configure', 'defensio');
-		}
-		return $actions;
-	}
-
-	public function action_plugin_ui( $plugin_id, $action )
-	{
-		if ( $plugin_id == $this->plugin_id() ) {
-			switch ( $action ) {
-				case _t('Configure', 'defensio') :
-					$ui = new FormUI( 'defensio' );
-
-					// Add a text control for the address you want the email sent to
-					$api_key = $ui->append( 'text', 'api_key', 'option:defensio__api_key', _t('Defensio API Key: ', 'defensio') );
-					$api_key->add_validator( 'validate_required' );
-					$api_key->add_validator( array( $this, 'validate_api_key' ) );
-					
-					// using yes/no is not ideal but it's what we got :(
-					$announce_posts = $ui->append( 'select', 'announce_posts', 'option:defensio__announce_posts', _t('Announce New Posts To Defensio: ', 'defensio') );
-					$announce_posts->options = array( 'yes' => _t('Yes', 'defensio'), 'no' => _t('No', 'defensio') );
-					$announce_posts->add_validator( 'validate_required' );
-					
-					$auto_approve = $ui->append( 'select', 'auto_approve', 'option:defensio__auto_approve', _t('Automatically Approve Non-Spam Comments: ', 'defensio') );
-					$auto_approve->options = array( 'no' => _t('No', 'defensio'), 'yes' => _t('Yes', 'defensio') );
-					$auto_approve->add_validator( 'validate_required' );
-
-					$register = $ui->append( 'static', 'register', '<a href="http://defensio.com/signup">' . _t('Get A New Defensio API Key.', 'defensio') . '</a>' );
-
-					$ui->append( 'submit', 'save', _t( 'Save', 'defensio' ) );
-					$ui->set_option( 'success_message', _t( 'Configuration saved', 'defensio' ) );
-					$ui->out();
-					break;
-			}
-		}
-	}
-
-	public function validate_api_key( $key )
-	{
-		try {
-			DefensioAPI::validate_api_key( $key, Site::get_url( 'habari' ) );
-		}
-		catch ( Exception $e ) {
-			return array( sprintf( _t('Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the key is entered correctly and is <b>registered for this site (%s)</b>.', 'defensio'), $key, Site::get_url( 'habari' ) ) );
-		}
-		return array();
-	}
-
-	public function action_init()
-	{
-		$this->defensio = new DefensioAPI( Options::get( 'defensio__api_key' ), Site::get_url( 'habari' ) );
-		$this->load_text_domain( 'defensio' );
-	}
-
-	public function filter_dash_module_defensio( $module, $module_id, $theme )
+	/**
+	 * Filter our dashboard module to add our output.
+	 * @param array $module An array contain module data like title, content, etc
+	 * @param int $module_id The modules id
+	 * @param Theme $theme The theme object
+	 * @return array Our module containing title, content, etc.
+	 */
+	public function filter_dash_module_defensio( $module, $module_id, Theme $theme )
 	{
 		$stats = $this->theme_defensio_stats();
 		// Show an error in the dashboard if Defensio returns a bad response.
@@ -116,7 +201,9 @@ class Defensio extends Plugin
 	}
 	
 	/**
+	 * Get the Defensio stats.
 	 * @todo use cron to get stats, and "keep cache" system
+	 * @return DefensioResponse The stats. Or NULL if no respnse.
 	 */
 	public function theme_defensio_stats()
 	{
@@ -130,13 +217,17 @@ class Defensio extends Plugin
 			}
 			catch ( Exception $e ) {
 				EventLog::log( $e->getMessage(), 'notice', 'theme', 'Defensio' );
-				return null;
+				return NULL;
 			}
 		}
 
 		return $stats;
 	}
-	
+
+	/**
+	 * Scan a comment with defensio and set it's status.
+	 * @param Comment $comment The comment object to scan
+	 */
 	private function audit_comment( Comment $comment )
 	{
 		$user = User::identify();
@@ -146,10 +237,10 @@ class Defensio extends Plugin
 			'comment-author' => $comment->name,
 			'comment-type' => strtolower( $comment->typename ),
 			'comment-content' => $comment->content_out,
-			'comment-author-email' => $comment->email ? $comment->email : null,
-			'comment-author-url' => $comment->url ? $comment->url : null,
+			'comment-author-email' => $comment->email ? $comment->email : NULL,
+			'comment-author-url' => $comment->url ? $comment->url : NULL,
 			'permalink' => $comment->post->permalink,
-			'referrer' => isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null,
+			'referrer' => isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : NULL,
 		);
 		if ( $user instanceof User ) {
 			$params['user-logged-in'] = $user->loggedin;
@@ -160,14 +251,24 @@ class Defensio extends Plugin
 			}
 		}
 
+		if ( self::TEST_FORCE != FALSE ) {
+			$params['test-force'] = self::TEST_FORCE;
+		}
+
 		$result = $this->defensio->audit_comment( $params );
 		if ( $result->spam == true ) {
 			$comment->status = 'spam';
-			$comment->info->spamcheck = array_unique(array_merge((array) $comment->info->spamcheck, array( _t('Flagged as Spam by Defensio', 'defensio'))));
+			// this array nonsense is dumb
+			$comment->info->spamcheck = array_unique(
+				array_merge(
+					(array) $comment->info->spamcheck,
+					array( _t('Flagged as Spam by Defensio', 'defensio') )
+				)
+			);
 		}
 		else {
 			// it's not spam so if auto_approve is set, approve it
-			if ( Options::get('defensio__auto_approve') == 'yes' ) {
+			if ( Options::get( self::OPTION_AUTO_APPROVE ) == 'yes' ) {
 				$comment->status = 'approved';
 			}
 			else {
@@ -178,7 +279,11 @@ class Defensio extends Plugin
 		$comment->info->defensio_spaminess = $result->spaminess;
 	}
 
-	public function action_comment_insert_before( $comment )
+	/**
+	 * Hook in to scan the comment with Defensio. If it fails, add a cron to try again.
+	 * @param Comment $comment The comment object that was inserted
+	 */
+	public function action_comment_insert_before( Comment $comment )
 	{
 		try {
 			$this->audit_comment( $comment );
@@ -201,7 +306,12 @@ class Defensio extends Plugin
 	 */
 	protected function _add_cron( $time = 0 )
 	{
-		CronTab::add_single_cron( 'defensio_queue', 'defensio_queue', time() + $time, _t('Queued comments to scan with defensio, that failed first time', 'defensio') );
+		CronTab::add_single_cron(
+				'defensio_queue',
+				'defensio_queue',
+				time() + $time,
+				_t('Queued comments to scan with defensio, that failed first time', 'defensio')
+			);
 	}
 	
 	/**
@@ -255,7 +365,7 @@ class Defensio extends Plugin
 		return true;
 	}
 
-	public function action_admin_moderate_comments( $action, $comments, $handler )
+	public function action_admin_moderate_comments( $action, Comments $comments, AdminHandler $handler )
 	{
 		$false_positives = array();
 		$false_negatives = array();
@@ -266,13 +376,11 @@ class Defensio extends Plugin
 					if ( ( $comment->status == Comment::STATUS_APPROVED || $comment->status == Comment::STATUS_UNAPPROVED )
 						&& isset($comment->info->defensio_signature) ) {
 						$false_negatives[] = $comment->info->defensio_signature;
-						Cache::expire('defensio_stats');
 					}
 					break;
 				case 'approve':
 					if ( $comment->status == Comment::STATUS_SPAM && isset($comment->info->defensio_signature) ) {
 						$false_positives[] = $comment->info->defensio_signature;
-						Cache::expire('defensio_stats');
 					}
 					break;
 			}
@@ -281,6 +389,7 @@ class Defensio extends Plugin
 		try {
 			if ( $false_positives ) {
 				$this->defensio->report_false_positives( array( 'signatures' => $false_positives ) );
+				Cache::expire('defensio_stats');
 				$count = count($false_positives);
 				Session::notice(sprintf(
 					_n(
@@ -294,6 +403,7 @@ class Defensio extends Plugin
 			}
 			if ( $false_negatives ) {
 				$this->defensio->report_false_negatives( array( 'signatures' => $false_negatives ) );
+				Cache::expire('defensio_stats');
 				$count = count($false_negatives);
 				Session::notice(sprintf(
 					_n(
@@ -311,9 +421,9 @@ class Defensio extends Plugin
 		}
 	}
 
-	public function action_post_insert_after( $post )
+	public function action_post_insert_after( Post $post )
 	{
-		if ( Options::get( 'defensio__announce_posts' ) == 'yes' && $post->statusname == 'published' ) {
+		if ( Options::get( self::OPTION_ANNOUNCE_POSTS ) == 'yes' && $post->statusname == 'published' ) {
 			$params = array(
 				'article-author' => $post->author->username,
 				'article-author-email' => $post->author->email,
@@ -337,9 +447,9 @@ class Defensio extends Plugin
 		return $comment_status_list;
 	}
 	
-	public static function get_spaminess_style( $comment )
+	public static function get_spaminess_style( Comment $comment )
 	{
-		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam')) {
+		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam') ) {
 			$grad_hex = create_function( '$s,$e,$i', 'return (($e-$s)*$i)+$s;' );
 			$start_hex = '#FFD6D7';
 			$end_hex = '#F8595D';
@@ -362,22 +472,25 @@ class Defensio extends Plugin
 		return '';
 	}
 	
-	public function filter_comment_style( $style, $comment ) {
-		if($style != '') {
-			$style.= ' ';
+	public function filter_comment_style( $style, Comment $comment )
+	{
+		if ( $style != '' ) {
+			$style .= ' ';
 		}
-		$style.= self::get_spaminess_style($comment);
+		$style .= self::get_spaminess_style($comment);
 		return $style;
 	}
 	
-	public function action_comment_info( $comment ) {
-		if(isset($comment->info->defensio_spaminess)) {
+	public function action_comment_info( Comment $comment )
+	{
+		if ( isset($comment->info->defensio_spaminess) ) {
 			echo '<p class="keyval spam"><span class="label">' . _t('Defensio Spaminess:', 'defensio') . '</span>' . '<strong>' . ($comment->info->defensio_spaminess*100) . '%</strong></p>';
 		}
 	}
 	
 	/**
 	 * Sort by spaminess when the status:spam filter is set
+	 * @todo use DB filters to sort from DB
 	 */
 	public function filter_comments_actions( $actions, &$comments )
 	{
@@ -405,4 +518,5 @@ class Defensio extends Plugin
 	}
 }
 
+spl_autoload_register( array('Defensio', 'autoload') );
 ?>
