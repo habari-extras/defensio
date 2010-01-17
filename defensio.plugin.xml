@@ -12,6 +12,9 @@
 		<value><![CDATA[
 		<p>You will need an <a href="http://defensio.com/signup">API key from defensio</a> for the
 		filter to work. Enter the API key Defensio gives you in the Configuration.</p>
+
+		<p> You can also choose the minimum spammines allowed. Any comment with a spaminess value
+		above this value, will be marked as spam.</p>
 		
 		<p>You can also choose to announce new blog posts you make to Defensio to help Defensio
 		determine what is and what is not spam. The information sent to Defensio is as follows:</p>
