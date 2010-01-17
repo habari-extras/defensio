@@ -142,8 +142,10 @@ class Defensio extends Plugin
 		}
 		catch ( Exception $e ) {
 			return array(
-				_t('Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the key is entered correctly and is <b>registered for this site (%s)</b>.',
-				array( $key, Site::get_url( 'habari' ) ),
+				_t('Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the
+					key is entered correctly and is <b>registered for this site (%s)</b>.  Defensio
+					said: "%s"',
+				array( $key, Site::get_url( 'habari' ), $e->getMessage() ),
 				'defensio')
 			);
 		}
