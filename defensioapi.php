@@ -31,7 +31,7 @@ class DefensioAPI
 		
 		$response = $this->call( $action, $params );
 		if ( $response->status == 'fail' ) {
-			throw new Exception( $action . ' Failed: ' . $response->message );
+			throw new Exception( $action . ' failed: ' . $response->message );
 		}
 		return $response;
 	}
@@ -139,16 +139,22 @@ class DefensioResponse
 	
 	public function __construct( $xml )
 	{
+		$old_error = libxml_use_internal_errors(TRUE);
 		try {
 			$xml = new SimpleXMLElement( $xml );
 		}
 		catch ( Exception $e ) {
+			// reset xml error output
+			libxml_clear_errors();
+			libxml_use_internal_errors($old_error);
 			throw new Exception( 'Bad Response From Server' );
 		}
 		foreach ( $xml as $element ) {
 			$node = new DefensioNode( $element );
 			$this->nodes[$node->name]= $node;
 		}
+		// reset xml error output
+		libxml_use_internal_errors($old_error);
 	}
 	
 	public function __set( $name, $value )
