@@ -17,7 +17,7 @@ class Defensio extends Plugin
 	const COMMENT_STATUS_QUEUED = 9;
 
 	const OPTION_API_KEY = 'defensio__api_key';
-	const OPTION_FLAG_SPAMINESS = 'defensio__api_key';
+	const OPTION_FLAG_SPAMINESS = 'defensio__spaminess_flag';
 	const OPTION_ANNOUNCE_POSTS = 'defensio__announce_posts';
 	const OPTION_AUTO_APPROVE = 'defensio__auto_approve';
 
@@ -98,7 +98,7 @@ class Defensio extends Plugin
 				'option:' . self::OPTION_FLAG_SPAMINESS,
 				_t('Minimum Spaminess to Flag as Spam (%): ', 'defensio')
 			);
-		$spaminess->options = range(0, 100, 5);
+		$spaminess->options = array_combine( range(0, 100, 5), range(0, 100, 5) );
 		$spaminess->add_validator( 'validate_required' );
 
 		// using yes/no is not ideal but it's what we got :(
@@ -126,8 +126,18 @@ class Defensio extends Plugin
 			);
 
 		$ui->append( 'submit', 'save', _t( 'Save', 'defensio' ) );
-		$ui->set_option( 'success_message', _t( 'Configuration saved', 'defensio' ) );
-		return $ui;
+		$ui->on_success( array($this, 'formui_submit') );
+		return $ui->get();
+	}
+
+	/**
+	 * Handle the form submition and save options
+	 * @param FormUI $form The FormUI that was submitted
+	 */
+	public function formui_submit( FormUI $form )
+	{
+		Session::notice( _t('Defensio options saved.', 'defensio') );
+		$form->save();
 	}
 
 	/**
