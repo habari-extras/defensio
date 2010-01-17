@@ -60,7 +60,7 @@ class Defensio extends Plugin
 		if ( !Options::get(self::OPTION_API_KEY) ) {
 			Options::set( self::OPTION_API_KEY, '' );
 		}
-		Options::set(self::OPTION_FLAG_SPAMINESS, 50);
+		Options::set(self::OPTION_FLAG_SPAMINESS, 0);
 		Options::set(self::OPTION_ANNOUNCE_POSTS, 'yes');
 		Options::set(self::OPTION_AUTO_APPROVE, 'no');
 	}
@@ -94,11 +94,11 @@ class Defensio extends Plugin
 		// min spamines flag
 		$spaminess = $ui->append(
 				'select',
-				'announce_posts',
+				'min_spaminess',
 				'option:' . self::OPTION_FLAG_SPAMINESS,
 				_t('Minimum Spaminess to Flag as Spam (%): ', 'defensio')
 			);
-		$spaminess->options = range(1, 100, 5);
+		$spaminess->options = range(0, 100, 5);
 		$spaminess->add_validator( 'validate_required' );
 
 		// using yes/no is not ideal but it's what we got :(
@@ -256,7 +256,9 @@ class Defensio extends Plugin
 		}
 
 		$result = $this->defensio->audit_comment( $params );
-		if ( $result->spam == true ) {
+		// see if it's spamm or the spaminess is greater than min allowed spaminess
+		if ( $result->spam == true || ( $min_spaminess = Options::get( self::OPTION_FLAG_SPAMINESS )
+				&& $result->spaminess >= ((int) $min_spaminess / 100) ) ) {
 			$comment->status = 'spam';
 			// this array nonsense is dumb
 			$comment->info->spamcheck = array_unique(
