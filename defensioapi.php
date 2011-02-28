@@ -66,7 +66,6 @@ class DefensioAPI
 	
 	public static function get_http_status( $header )
 	{
-		$header = explode( "\r\n", $header );
 		foreach ( $header as $head ) {
 			if ( preg_match( "@HTTP/[\S]+ (\d+) [\S]+@", $head, $status ) ) {
 				return $status[1];
