@@ -270,7 +270,7 @@ class Defensio extends Plugin
 		$result = $this->defensio->audit_comment( $params );
 		// see if it's spamm or the spaminess is greater than min allowed spaminess
 		$min_spamminess = Options::get( self::OPTION_FLAG_SPAMINESS );
-		if ( $result->spam == true && $result->spaminess >= ((int) $min_spaminess / 100) ) {
+		if ( $result->spam == true || $result->spaminess >= ((int) $min_spaminess / 100) ) {
 			$comment->status = 'spam';
 			// this array nonsense is dumb
 			$comment->info->spamcheck = array_unique(
