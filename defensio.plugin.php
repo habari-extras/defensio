@@ -269,7 +269,7 @@ class Defensio extends Plugin
 
 		$result = $this->defensio->audit_comment( $params );
 		// see if it's spamm or the spaminess is greater than min allowed spaminess
-		$min_spamminess = Options::get( self::OPTION_FLAG_SPAMINESS );
+		$min_spaminess = Options::get( self::OPTION_FLAG_SPAMINESS );
 		if ( $result->spam == true && $result->spaminess >= ((int) $min_spaminess / 100) ) {
 			$comment->status = 'spam';
 			// this array nonsense is dumb
@@ -506,14 +506,17 @@ class Defensio extends Plugin
 	 * Sort by spaminess when the status:spam filter is set
 	 * @todo use DB filters to sort from DB
 	 */
-	public function filter_comments_actions( $actions, &$comments )
+	/* Throws an error when $comments is passed by reference. However, the entire purpose
+	 * of the filter is to reorder the comments. Commenting out until a suitable fix can
+	 * be found.
+	public function filter_comments_actions( $actions, $comments )
 	{
 		if ( preg_match( '/status:\s*spam/i', Controller::get_handler()->handler_vars['search'] )
 			|| Comment::status(Controller::get_handler()->handler_vars['status']) == Comment::status('spam') ) {
 			usort( $comments, 'Defensio::sort_by_spaminess' );
 		}
 		return $actions;
-	}
+	}*/
 
 	public static function sort_by_spaminess( $a, $b )
 	{
