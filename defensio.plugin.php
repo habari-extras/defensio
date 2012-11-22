@@ -55,7 +55,7 @@ class Defensio extends Plugin
 	 */
 	public function action_plugin_activation()
 	{
-		Modules::add( 'Defensio' );
+		//Modules::add( 'Defensio' );
 		Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
 		if ( !Options::get(self::OPTION_API_KEY) ) {
 			Options::set( self::OPTION_API_KEY, '' );
@@ -70,7 +70,7 @@ class Defensio extends Plugin
 	 */
 	public function action_plugin_deactivation()
 	{
-		Modules::remove_by_name( 'Defensio' );
+		//Modules::remove_by_name( 'Defensio' );
 	}
 
 	/**
