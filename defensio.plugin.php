@@ -31,7 +31,7 @@ class Defensio extends Plugin
 	{
 		static $classes = array( 'defensioapi', 'defensionode', 'defensioparams', 'defensioresponse' );
 		static $loaded = FALSE;
-		
+
 		if ( !$loaded && in_array( strtolower($class), $classes ) !== FALSE ) {
 			require "defensioapi.php";
 			$loaded = true;
@@ -173,15 +173,15 @@ class Defensio extends Plugin
 	}
 
 	/**
-	 * Add the dashboard module to the list
-	 * @param array $modules The dashboard modules available
-	 * @return array Modified list of dashboard modules with ours added
+	 * Return a list of blocks that can be used for the dashboard
+	 * @param array $block_list An array of block names, indexed by unique string identifiers
+	 * @return array The altered array
 	 */
-	public function filter_dash_modules( $modules )
+	public function filter_dashboard_block_list( Array $block_list )
 	{
-		$modules[] = 'Defensio';
-		$this->add_template( 'dash_defensio', dirname( __FILE__ ) . '/dash_defensio.php' );
-		return $modules;
+		$block_list['defensio'] = 'Defensio';
+		$this->add_template( 'dashboard.block.defensio', dirname( __FILE__ ) . '/dashboard.block.defensio.php' );
+		return $block_list;
 	}
 
 	/**
@@ -191,27 +191,22 @@ class Defensio extends Plugin
 	 * @param Theme $theme The theme object
 	 * @return array Our module containing title, content, etc.
 	 */
-	public function filter_dash_module_defensio( $module, $module_id, Theme $theme )
+	public function action_block_content_defensio( Block $block, Theme $theme )
 	{
 		$stats = $this->theme_defensio_stats();
 		// Show an error in the dashboard if Defensio returns a bad response.
 		if ( !$stats ) {
-			$module['title'] = '<a href="' . URL::get( 'admin', 'page=comments' ) . '">' . _t('Defensio', 'defensio') . '</a>';
-			$module['content'] = '<ul class=items"><li class="item clear">' . _t('Bad Response From Server', 'defensio') . '</li></ul>';
-			return $module;
+			$block->error = _t('Bad Response From Server', 'defensio');
+			return;
 		}
 
-		$theme->accuracy = sprintf( '%.2f', $stats->accuracy * 100 );
-		$theme->spam = $stats->spam;
-		$theme->ham = $stats->ham;
-		$theme->false_negatives = $stats->false_negatives;
-		$theme->false_positives = $stats->false_positives;
-
-		$module['title'] = '<a href="' . htmlspecialchars( URL::get( 'admin', array( 'page' => 'comments', 'status' => Comment::STATUS_SPAM ) ), ENT_COMPAT, 'UTF-8' ) . '">'. _t('Defensio', 'defensio') . '</a>';
-		$module['content'] = $theme->fetch( 'dash_defensio' );
-		return $module;
+		$block->accuracy = sprintf( '%.2f', $stats->accuracy * 100 );
+		$block->spam = $stats->spam;
+		$block->ham = $stats->ham;
+		$block->false_negatives = $stats->false_negatives;
+		$block->false_positives = $stats->false_positives;
 	}
-	
+
 	/**
 	 * Get the Defensio stats.
 	 * @todo use cron to get stats, and "keep cache" system
@@ -314,7 +309,7 @@ class Defensio extends Plugin
 			Session::notice( _t('Your comment is being scanned for spam.', 'defensio') );
 		}
 	}
-	
+
 	/**
 	 * I should really comment all these functions. --matt
 	 */
@@ -327,14 +322,14 @@ class Defensio extends Plugin
 				_t('Queued comments to scan with defensio, that failed first time', 'defensio')
 			);
 	}
-	
+
 	/**
 	 * try to scan for MAX_RETRIES
 	 */
 	public function filter_defensio_queue($result = true)
 	{
 		$comments = Comments::get( array('status' => self::COMMENT_STATUS_QUEUED) );
-		
+
 		if ( count($comments) > 0 ) {
 			$try_again = FALSE;
 			foreach( $comments as $comment ) {
@@ -454,13 +449,13 @@ class Defensio extends Plugin
 			}
 		}
 	}
-	
+
 	public function filter_list_comment_statuses( array $comment_status_list )
 	{
 		$comment_status_list[self::COMMENT_STATUS_QUEUED] = 'defensio queue';
 		return $comment_status_list;
 	}
-	
+
 	public static function get_spaminess_style( Comment $comment )
 	{
 		if ( isset($comment->info->defensio_spaminess) && $comment->status == Comment::status('spam') ) {
@@ -485,7 +480,7 @@ class Defensio extends Plugin
 		}
 		return '';
 	}
-	
+
 	public function filter_comment_style( $style, Comment $comment )
 	{
 		if ( $style != '' ) {
@@ -494,43 +489,11 @@ class Defensio extends Plugin
 		$style .= self::get_spaminess_style($comment);
 		return $style;
 	}
-	
+
 	public function action_comment_info( Comment $comment )
 	{
 		if ( isset($comment->info->defensio_spaminess) ) {
 			echo '<p class="keyval spam"><span class="label">' . _t('Defensio Spaminess:', 'defensio') . '</span>' . '<strong>' . ($comment->info->defensio_spaminess*100) . '%</strong></p>';
-		}
-	}
-	
-	/**
-	 * Sort by spaminess when the status:spam filter is set
-	 * @todo use DB filters to sort from DB
-	 */
-	/* Throws an error when $comments is passed by reference. However, the entire purpose
-	 * of the filter is to reorder the comments. Commenting out until a suitable fix can
-	 * be found.
-	public function filter_comments_actions( $actions, $comments )
-	{
-		if ( preg_match( '/status:\s*spam/i', Controller::get_handler()->handler_vars['search'] )
-			|| Comment::status(Controller::get_handler()->handler_vars['status']) == Comment::status('spam') ) {
-			usort( $comments, 'Defensio::sort_by_spaminess' );
-		}
-		return $actions;
-	}*/
-
-	public static function sort_by_spaminess( $a, $b )
-	{
-		if ( isset($a->info->defensio_spaminess) && isset($b->info->defensio_spaminess) ) {
-			if ( $a->info->defensio_spaminess == $b->info->defensio_spaminess ) {
-				return 0;
-			}
-			return $a->info->defensio_spaminess > $b->info->defensio_spaminess ? -1 : 1;
-		}
-		elseif ( isset($a->info->defensio_spaminess) ) {
-			return 0;
-		}
-		else {
-			return 1;
 		}
 	}
 }
