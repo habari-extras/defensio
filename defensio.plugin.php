@@ -55,7 +55,6 @@ class Defensio extends Plugin
 	 */
 	public function action_plugin_activation()
 	{
-		//Modules::add( 'Defensio' );
 		Session::notice( _t('Please set your Defensio API Key in the configuration.', 'defensio') );
 		if ( !Options::get(self::OPTION_API_KEY) ) {
 			Options::set( self::OPTION_API_KEY, '' );
@@ -63,14 +62,6 @@ class Defensio extends Plugin
 		Options::set(self::OPTION_FLAG_SPAMINESS, 0);
 		Options::set(self::OPTION_ANNOUNCE_POSTS, 'yes');
 		Options::set(self::OPTION_AUTO_APPROVE, 'no');
-	}
-
-	/**
-	 * Remove the dashboard module on deactivation.
-	 */
-	public function action_plugin_deactivation()
-	{
-		//Modules::remove_by_name( 'Defensio' );
 	}
 
 	/**
