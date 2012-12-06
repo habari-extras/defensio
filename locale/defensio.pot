@@ -1,0 +1,125 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-12-01 19:58-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: defensio.plugin.php:58
+msgid "Please set your Defensio API Key in the configuration."
+msgstr ""
+
+#: defensio.plugin.php:80
+msgid "Defensio API Key: "
+msgstr ""
+
+#: defensio.plugin.php:90
+msgid "Minimum Spaminess to Flag as Spam (%): "
+msgstr ""
+
+#: defensio.plugin.php:100
+msgid "Announce New Posts To Defensio: "
+msgstr ""
+
+#: defensio.plugin.php:102 defensio.plugin.php:110
+msgid "Yes"
+msgstr ""
+
+#: defensio.plugin.php:102 defensio.plugin.php:110
+msgid "No"
+msgstr ""
+
+#: defensio.plugin.php:108
+msgid "Automatically Approve Non-Spam Comments: "
+msgstr ""
+
+#: defensio.plugin.php:116
+msgid "Get A New Defensio API Key."
+msgstr ""
+
+#: defensio.plugin.php:119
+msgid "Save"
+msgstr ""
+
+#: defensio.plugin.php:130
+msgid "Defensio options saved."
+msgstr ""
+
+#: defensio.plugin.php:146
+#, php-format
+msgid ""
+"Sorry, the Defensio API key <b>%s</b> is invalid. Please check to make sure the\n"
+"\t\t\t\t\tkey is entered correctly and is <b>registered for this site (%s)</b>.  Defensio\n"
+"\t\t\t\t\tsaid: \"%s\""
+msgstr ""
+
+#: defensio.plugin.php:190
+msgid "Bad Response From Server"
+msgstr ""
+
+#: defensio.plugin.php:265
+msgid "Flagged as Spam by Defensio"
+msgstr ""
+
+#: defensio.plugin.php:293
+#, php-format
+msgid "Defensio scanning for comment %s failed, adding to queue"
+msgstr ""
+
+#: defensio.plugin.php:297
+msgid "Queued for Defensio scan."
+msgstr ""
+
+#: defensio.plugin.php:300
+msgid "Your comment is being scanned for spam."
+msgstr ""
+
+#: defensio.plugin.php:313
+msgid "Queued comments to scan with defensio, that failed first time"
+msgstr ""
+
+#: defensio.plugin.php:335
+#, php-format
+msgid "Defensio scanning, retry %d, for comment %s succeded"
+msgstr ""
+
+#: defensio.plugin.php:342
+#, php-format
+msgid "Defensio scanning failed for comment %s. Could not connect to server. Marking unapproved."
+msgstr ""
+
+#: defensio.plugin.php:350
+#, php-format
+msgid "Defensio scanning, retry %d, for comment %s failed"
+msgstr ""
+
+#: defensio.plugin.php:396
+#, php-format
+msgid "Reported %d false positive to Defensio"
+msgid_plural "Reported %d false positives to Defensio"
+msgstr[0] ""
+msgstr[1] ""
+
+#: defensio.plugin.php:410
+#, php-format
+msgid "Reported %d false negative to Defensio"
+msgid_plural "Reported %d false negatives to Defensio"
+msgstr[0] ""
+msgstr[1] ""
+
+#: defensio.plugin.php:487
+msgid "Defensio Spaminess:"
+msgstr ""
