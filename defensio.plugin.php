@@ -184,7 +184,7 @@ class Defensio extends Plugin
 	 */
 	public function action_block_content_defensio( Block $block, Theme $theme )
 	{
-		$stats = $this->theme_defensio_stats();
+		$stats = $this->get_defensio_stats();
 		// Show an error in the dashboard if Defensio returns a bad response.
 		if ( !$stats ) {
 			$block->error = _t('Bad Response From Server', 'defensio');
@@ -203,7 +203,7 @@ class Defensio extends Plugin
 	 * @todo use cron to get stats, and "keep cache" system
 	 * @return DefensioResponse The stats. Or NULL if no respnse.
 	 */
-	public function theme_defensio_stats()
+	public function get_defensio_stats()
 	{
 		if ( Cache::has( 'defensio_stats' ) ) {
 			$stats = Cache::get( 'defensio_stats' );
@@ -337,7 +337,7 @@ class Defensio extends Plugin
 					);
 				}
 				catch ( Exception $e ) {
-					if ( $comment->info->defensio_retries == self::MAX_RETRIES ) {
+					if ( $comment->info->defensio_retries >= self::MAX_RETRIES ) {
 						EventLog::log(
 							_t('Defensio scanning failed for comment %s. Could not connect to server. Marking unapproved.', array($comment->ip), 'defensio'),
 							'notice', 'comment', 'Defensio'
