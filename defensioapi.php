@@ -1,21 +1,23 @@
 <?php
 
+namespace DefensioAPI;
+
 class DefensioAPI
 {
 	const API_VERSION = '1.2';
 	const FORMAT = 'xml';
 	const SERVICE_TYPE = 'blog';
-	
+
 	private $api_key;
 	private $owner_url;
 	private $valid_actions = array( 'validate-key', 'audit-comment', 'announce-article', 'report-false-positives', 'report-false-negatives', 'get-stats' );
-	
+
 	public function __construct( $api_key, $owner_url )
 	{
 		$this->api_key = $api_key;
 		$this->owner_url = $owner_url;
 	}
-	
+
 	public function __call( $action, $args )
 	{
 		if ( !$this->api_key ) {
@@ -28,14 +30,14 @@ class DefensioAPI
 		$params = $args ? $args[0] : array();
 		$params = $params instanceof DefensioParams ? $params : new DefensioParams( $params );
 		$params->owner_url = $this->owner_url;
-		
+
 		$response = $this->call( $action, $params );
 		if ( $response->status == 'fail' ) {
 			throw new Exception( $action . ' failed: ' . $response->message );
 		}
 		return $response;
 	}
-	
+
 	private function call( $action, DefensioParams $params )
 	{
 		$client = new RemoteRequest( $this->build_url( $action ), 'POST' );
@@ -52,7 +54,7 @@ class DefensioAPI
 			throw new Exception( 'Server Not Responding' );
 		}
 	}
-	
+
 	private function build_url( $action )
 	{
 		return sprintf( 'http://api.defensio.com/%1$s/%2$s/%3$s/%4$s.%5$s',
@@ -63,7 +65,7 @@ class DefensioAPI
 			self::FORMAT
 		);
 	}
-	
+
 	public static function get_http_status( $header )
 	{
 		foreach ( $header as $head ) {
@@ -73,10 +75,10 @@ class DefensioAPI
 		}
 		return null;
 	}
-	
+
 	public static function validate_api_key( $key, $owner_url )
 	{
-		$defensio = new DefensioAPI( $key, $owner_url );
+		$defensio = new Defensio( $key, $owner_url );
 		return $defensio->validate_key();
 	}
 }
@@ -84,7 +86,7 @@ class DefensioAPI
 class DefensioParams
 {
 	private $post_data = array();
-	
+
 	public function __construct( $params = array() )
 	{
 		foreach( $params as $name => $value ) {
@@ -93,7 +95,7 @@ class DefensioParams
 			}
 		}
 	}
-	
+
 	public function __set( $name, $value )
 	{
 		$name = str_replace( '_', '-', $name );
@@ -111,7 +113,7 @@ class DefensioParams
 				break;
 		}
 	}
-	
+
 	public function __get( $name )
 	{
 		$name = str_replace( '_', '-', $name );
@@ -120,7 +122,7 @@ class DefensioParams
 		}
 		return null;
 	}
-	
+
 	public function get_post_body()
 	{
 		return http_build_query( $this->post_data, '', '&' );
@@ -135,7 +137,7 @@ class DefensioParams
 class DefensioResponse
 {
 	private $nodes = array();
-	
+
 	public function __construct( $xml )
 	{
 		$old_error = libxml_use_internal_errors(TRUE);
@@ -155,13 +157,13 @@ class DefensioResponse
 		// reset xml error output
 		libxml_use_internal_errors($old_error);
 	}
-	
+
 	public function __set( $name, $value )
 	{
 		$name = str_replace( '_', '-', $name );
 		$this->nodes[$name]= $value;
 	}
-	
+
 	public function __get( $name )
 	{
 		$name = str_replace( '_', '-', $name );
@@ -177,7 +179,7 @@ class DefensioNode
 	public $value;
 	public $name;
 	public $type;
-	
+
 	public function __construct( SimpleXMLElement $element )
 	{
 		$this->name = (string) $element->getName();
@@ -191,12 +193,12 @@ class DefensioNode
 			$this->value = (string) $element;
 		}
 	}
-	
+
 	public function __toString()
 	{
 		return $this->value;
 	}
-	
+
 	private function settype( $element, $type )
 	{
 		if ( $type == 'boolean' || $type == 'bool' ) {

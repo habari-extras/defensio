@@ -1,5 +1,9 @@
 <?php
 
+namespace Habari;
+
+use \DefensioAPI\DefensioAPI as DefensioAPI;
+
 /**
  * @package Defensio
  */
@@ -29,7 +33,8 @@ class Defensio extends Plugin
 	 */
 	public static function autoload( $class )
 	{
-		static $classes = array( 'defensioapi', 'defensionode', 'defensioparams', 'defensioresponse' );
+		static $classes = array( 'defensioapi\defensioapi', 'defensioapi\defensionode',
+			'defensioapi\defensioparams', 'defensionapi\defensioresponse' );
 		static $loaded = FALSE;
 
 		if ( !$loaded && in_array( strtolower($class), $classes ) !== FALSE ) {
@@ -489,5 +494,5 @@ class Defensio extends Plugin
 	}
 }
 
-spl_autoload_register( array('Defensio', 'autoload') );
+spl_autoload_register( array('Habari\Defensio', 'autoload') );
 ?>
