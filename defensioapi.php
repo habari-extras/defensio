@@ -2,7 +2,7 @@
 
 namespace DefensioAPI;
 
-class DefensioAPI
+class Defensio
 {
 	const API_VERSION = '1.2';
 	const FORMAT = 'xml';

@@ -2,7 +2,7 @@
 
 namespace Habari;
 
-use \DefensioAPI\DefensioAPI as DefensioAPI;
+use \DefensioAPI\Defensio as DefensioAPI;
 
 /**
  * @package Defensio
@@ -33,7 +33,7 @@ class Defensio extends Plugin
 	 */
 	public static function autoload( $class )
 	{
-		static $classes = array( 'defensioapi\defensioapi', 'defensioapi\defensionode',
+		static $classes = array( 'defensioapi\defensio', 'defensioapi\defensionode',
 			'defensioapi\defensioparams', 'defensionapi\defensioresponse' );
 		static $loaded = FALSE;
 
